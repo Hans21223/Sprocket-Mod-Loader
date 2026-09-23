@@ -1,0 +1,9 @@
+# Locally prepared upstream downloads and release copies
+/releases/
+**/Ready-to-copy/
+**/preparing-*/
+BepInEx-*.zip
+**/bin/
+**/obj/
+.vs/
+*.user

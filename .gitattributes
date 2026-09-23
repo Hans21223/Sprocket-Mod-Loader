@@ -1,0 +1,2 @@
+# Preserve packaged bytes so the published checksum manifest stays valid.
+* -text
