@@ -323,6 +323,18 @@ internal unsafe class Il2CppDetourMethodPatcher : MethodPatcher
             il.Emit(OpCodes.Ldarg_S, i + paramStartIndex);
             il.Emit(OpCodes.Ldloc, indirectVariables[i]);
             var directType = managedParams[i].GetElementType();
+            if (directType.IsSubclassOf(typeof(ValueType)))
+            {
+                // ref IL2CPP value types point to inline struct data, not an object-reference slot.
+                // Copy the entire unboxed value back, including replacements made by Harmony.
+                uint alignment = 0;
+                var size = IL2CPP.il2cpp_class_value_size(Il2CppClassPointerStore.GetNativeClassPointer(directType), ref alignment);
+                il.Emit(OpCodes.Call, ObjectBaseToPtrNotNullMethodInfo);
+                il.Emit(OpCodes.Call, AccessTools.Method(typeof(IL2CPP), nameof(IL2CPP.il2cpp_object_unbox)));
+                il.Emit(OpCodes.Ldc_I4, size);
+                il.Emit(OpCodes.Cpblk);
+                continue;
+            }
             EmitConvertManagedTypeToIL2CPP(il, directType);
             il.Emit(StIndOpcodes.TryGetValue(directType, out var stindOpCodde) ? stindOpCodde : OpCodes.Stind_I);
         }
@@ -390,6 +402,12 @@ internal unsafe class Il2CppDetourMethodPatcher : MethodPatcher
     {
         variable = null;
 
+        // Generated wrappers represent non-blittable IL2CPP structs as managed classes.
+        // A native ref to one is the struct's data address, not pointer-to-object-pointer.
+        bool byRefBoxedValue = managedParamType.IsByRef &&
+            managedParamType.GetElementType().IsSubclassOf(typeof(ValueType));
+        if (byRefBoxedValue) managedParamType = managedParamType.GetElementType();
+
         bool needsBoxing = managedParamType.IsSubclassOf(typeof(ValueType));
 
         if (needsBoxing)
@@ -411,7 +429,7 @@ internal unsafe class Il2CppDetourMethodPatcher : MethodPatcher
                 il.Emit(OpCodes.Call, AccessTools.Method(typeof(IL2CPP), nameof(IL2CPP.il2cpp_object_new)));
                 var objLocal = il.DeclareLocal(typeof(IntPtr));
                 il.Emit(OpCodes.Stloc, objLocal);
-                il.Emit(Environment.Is64BitProcess ? OpCodes.Ldarg : OpCodes.Ldarga_S, argIndex);
+                il.Emit(byRefBoxedValue || Environment.Is64BitProcess ? OpCodes.Ldarg : OpCodes.Ldarga_S, argIndex);
                 il.Emit(OpCodes.Ldloc, objLocal);
                 il.Emit(OpCodes.Call, AccessTools.Method(typeof(IL2CPP), nameof(IL2CPP.il2cpp_object_unbox)));
                 il.Emit(OpCodes.Ldc_I4, (int)valueSize);
@@ -425,7 +443,7 @@ internal unsafe class Il2CppDetourMethodPatcher : MethodPatcher
                 il.Emit(OpCodes.Conv_I);
                 // On x64, struct is always a pointer but it is a non-pointer on x86
                 // We don't handle byref structs on x86 yet but we're yet to encounter those
-                il.Emit(Environment.Is64BitProcess ? OpCodes.Ldarg : OpCodes.Ldarga_S, argIndex);
+                il.Emit(byRefBoxedValue || Environment.Is64BitProcess ? OpCodes.Ldarg : OpCodes.Ldarga_S, argIndex);
                 il.Emit(OpCodes.Call,
                     AccessTools.Method(typeof(IL2CPP),
                         nameof(IL2CPP.il2cpp_value_box)));
@@ -474,11 +492,9 @@ internal unsafe class Il2CppDetourMethodPatcher : MethodPatcher
         if (managedParamType.IsByRef)
         {
             var directType = managedParamType.GetElementType();
-            // blittable value type pointer, note that ref to boxed Il2CppSystem.ValueType wrapper is still not handled
+            // Blittable value type pointers pass through unchanged.
             if (directType.IsValueType)
                 return;
-
-            // TODO: directType being Il2CppSystem.ValueType is not handled yet (but it's not that common in games). Implement when needed.
 
             variable = il.DeclareLocal(directType);
 
@@ -492,6 +508,12 @@ internal unsafe class Il2CppDetourMethodPatcher : MethodPatcher
         else
         {
             HandleTypeConversion(managedParamType);
+            if (byRefBoxedValue)
+            {
+                variable = il.DeclareLocal(managedParamType);
+                il.Emit(OpCodes.Stloc, variable);
+                il.Emit(OpCodes.Ldloca, variable);
+            }
         }
     }
 

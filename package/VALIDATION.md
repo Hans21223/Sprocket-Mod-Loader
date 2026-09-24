@@ -18,6 +18,10 @@ Full campaigns, long-term stability, every third-party mod combination, standalo
 
 Package preparation checks are documented in PACKAGE-CHECKS.txt. They verify packaging and checksums, not a new game session.
 
+## 1.2.0 by-reference struct regression, 24 September 2026
+
+The crash dump for editor entry with Sprocket Tweaks 1.1.0 identified an invalid string access through its by-reference WheelArrayBlueprint patch. With the corrected bridge, the editor loaded, wheel weights were reported, the air-tyre adjustment ran (166.5 to 8.3 kg), and original Hello Melon's cannon callback ran. See MELON-BYREF-CRASH.md for evidence and limits. The earlier shared-hook tests remain passing.
+
 ## 1.1.0 shared-hook regression, 24 September 2026
 
 111 native relay checks pass; HarmonySupport builds with zero errors. Original Hello Melon 1.0.0 and Sprocket QoL 1.3.0 ran together through MLLoader 2.3.9 in the sandbox cannon inspector. The Hello Melon hook logged success, the QoL Gun length panel rendered, and the game remained running. See MELON-HOOK-CRASH.md for details and limits.

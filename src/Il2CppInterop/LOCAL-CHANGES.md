@@ -13,6 +13,8 @@ The four paths above are under Il2CppInterop.Runtime.
 
 Version 1.1.0 also modifies Il2CppInterop.HarmonySupport/Il2CppDetourMethodPatcher.cs and adds SprocketNativeHookChain.cs beside it. For the verified Sprocket profile, different managed wrappers for the same native function share one physical detour. A stable relay selects the newest wrapper; copied native MethodInfo structures forward each wrapper to its predecessor and ultimately the original game function. Rebuilding Harmony patches updates this chain without hooking reverse-P/Invoke callback thunks. Other games keep the upstream backend.
 
+Version 1.2.0 repairs by-reference Il2CppSystem.ValueType argument conversion in Il2CppDetourMethodPatcher. It boxes the data at the incoming struct address instead of dereferencing its first field as an object pointer, then copies the entire unboxed struct back after the call. This fixes the observed WheelArray.Build / WheelArrayBlueprint.MeshGuid crash with Sprocket Tweaks 1.1.0. Blittable references and ordinary object references retain their original conversion paths. Runtime validation covers the reported Sprocket wheel/editor case, not all possible value types or games.
+
 Hook sites and retired delegates intentionally remain rooted for the process lifetime so a native caller cannot return through collected callbacks. Removing a wrapper's Harmony patches rebuilds its body as a forwarding wrapper; it does not dispose the shared hook and disrupt other wrappers. This supports both canonical Sprocket types and MLLoader's Il2CppSprocket aliases without modifying the mods.
 Source archive copies carry a dated comment identifying these modifications. The comments were added for redistribution; they do not alter the compiled behavior.
 

@@ -7,3 +7,11 @@ BepInEx-*.zip
 **/obj/
 .vs/
 *.user
+**/__pycache__/
+/manager/games.json
+/manager/mods/
+/manager/state/
+/manager/backup/
+/manager/loader-cache/
+/manager/loader-history/
+/manager/loader-recovery/

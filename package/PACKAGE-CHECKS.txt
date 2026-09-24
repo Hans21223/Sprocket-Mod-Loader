@@ -1,12 +1,15 @@
-Package checks, 2026-09-24, version 1.1.0
+Package checks, 2026-09-24, version 1.2.0
 
-Prepared with Windows PowerShell from the hash-verified official be.788 ZIP.
+Prepared from the hash-verified official be.788 ZIP by the Python manager installer.
 All 229 prepared files match the official base plus the four bridge DLLs by SHA-256.
 The three original patch DLLs remain byte-identical to release 1.0.0.
-HarmonySupport is the new 1.1.0 binary, built with zero errors.
+HarmonySupport is the new 1.2.0 binary, built with zero errors.
 111 native hook chain checks passed, including callbacks, patch refresh, GC and byref forwarding.
 Original Hello Melon 1.0.0 SHA-256 was verified before deployment and during the final game run.
 In-game cannon inspector: Hello Melon hook logged success, QoL Gun length panel rendered, game remained running.
-Runtime evidence and limits are described in MELON-HOOK-CRASH.md and VALIDATION.md.
+By-reference struct fix: Sprocket Tweaks editor entry, wheel callbacks and air-tyre adjustment passed.
+Runtime evidence and limits are described in MELON-HOOK-CRASH.md, MELON-BYREF-CRASH.md and VALIDATION.md.
 Source ZIP and release ZIP are CRC checked by tools/package-release.py.
 Personal game data and generated game assemblies are excluded.
+The combined BepInEx + MLLoader installer verified all 316 package files on both local game copies.
+Further gameplay testing is left to the user. A separate shutdown crash remains unresolved (preview).

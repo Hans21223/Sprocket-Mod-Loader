@@ -5,7 +5,7 @@ import zipfile
 
 ROOT = Path(__file__).resolve().parents[1]
 PACKAGE = ROOT / 'package'
-VERSION = '1.1.0'
+VERSION = '1.2.0'
 
 def sha(path):
     return hashlib.sha256(path.read_bytes()).hexdigest()

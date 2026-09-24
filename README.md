@@ -2,9 +2,17 @@
 
 An unofficial **BepInEx be.788 compatibility patch** for **Sprocket 0.2.55.5 / Unity 6000.3.21f1 on Windows x64**. It repairs the IL2CPP bridge so compatible BepInEx mods can run on the tested game build.
 
-**[Download version 1.1.0](https://github.com/Hans21223/Sprocket-Mod-Loader/releases/tag/v1.1.0)**
+**[Download version 1.2.0](https://github.com/Hans21223/Sprocket-Mod-Loader/releases/tag/v1.2.0)**
 
-Download **Sprocket-Mod-Loader-1.1.0.zip** from the release assets. Extract it and double-click **Prepare Loader.cmd**. It downloads the exact official BepInEx build, checks the files, and creates a **Ready-to-copy** folder. It does not automatically change or launch the game. Follow the [installation and removal instructions](package/README.md) before copying its contents beside Sprocket.exe.
+For one-click setup, download **Sprocket-Mod-Manager-1.2.0.zip**, extract it beside Sprocket.exe as ModManager, open `modman.pyw`, and click **Install mod loader**. First use asks for your MLLoader 2.3.9 ZIP from Nexus. Requires Python 3.11+ on Windows. [Manager instructions](manager/README.md).
+
+For manual setup, download **Sprocket-Mod-Loader-1.2.0.zip**. Extract it and double-click **Prepare Loader.cmd** to create a **Ready-to-copy** folder. Follow the [installation and removal instructions](package/README.md).
+
+**Prefer no PowerShell?** The manager button uses Python, and [manual File Explorer installation](package/MANUAL-INSTALL.md) requires no installer script. The preparation helper is optional.
+
+**New in 1.2.0:** fixes the editor-entry crash with Sprocket Tweaks caused by incorrectly converting by-reference wheel structs. The editor, air-tyre adjustment and Hello Melon cannon callback passed the recorded test. [Cause and validation](docs/MELON-BYREF-CRASH.md).
+
+**Preview:** a separate crash during shutdown remains unresolved. The tested editor fix does not establish crash-free gameplay or shutdown.
 
 **New in 1.1.0:** fixes the native-hook collision between MLLoader mods and BepInEx mods. Original Hello Melon 1.0.0 and Sprocket QoL now run their cannon-inspector patches together in the tested setup. [Cause, fix and validation](docs/MELON-HOOK-CRASH.md).
 

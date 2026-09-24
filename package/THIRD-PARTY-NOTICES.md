@@ -7,7 +7,7 @@ This unofficial package changes Il2CppInterop, not the upstream BepInEx project 
 | Component | Origin | License |
 | --- | --- | --- |
 | Il2CppInterop.Runtime.dll (modified) | BepInEx/Il2CppInterop, source base 81a6f78c8b653e0da4a3420ac4cd00819e8b6292 | LGPL-3.0-only |
-| Il2CppInterop.HarmonySupport.dll (modified, 1.1.0 shared hooks) | Same Il2CppInterop source base | LGPL-3.0-only |
+| Il2CppInterop.HarmonySupport.dll (modified, shared hooks and 1.2.0 by-reference structs) | Same Il2CppInterop source base | LGPL-3.0-only |
 | Il2CppInterop.Common.dll (matching build) | Same Il2CppInterop source base | LGPL-3.0-only |
 | TerraFX.Interop.Windows.dll 10.0.22621.2 (unmodified dependency) | TerraFX.Interop.Windows NuGet package; repository commit fadce5a41fa5e6f0282e80e96f033d0a2c130991 | MIT |
 
