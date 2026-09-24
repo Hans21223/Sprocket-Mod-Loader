@@ -1,10 +1,12 @@
-Package checks, 2026-09-23
+Package checks, 2026-09-24, version 1.1.0
 
-Online download and preparation: PASS; all 229 prepared files match the tested loader entry by SHA-256.
-Wrong base ZIP: rejected before preparing output.
-Changed patch DLL: rejected before preparing output.
-Offline preparation with final script: PASS; all 229 prepared files match by SHA-256.
-Existing prepared folder: rejected without overwriting it.
-Included bridge source: .NET SDK 8.0.425 Release build passed with 0 errors and 187 warnings (including restore/upstream warnings).
-Source archive CRC, exclusion of local build outputs/game assemblies, and personal username scan: PASS.
-No game launch or new gameplay test was performed while packaging. See VALIDATION.md for prior runtime evidence.
+Prepared with Windows PowerShell from the hash-verified official be.788 ZIP.
+All 229 prepared files match the official base plus the four bridge DLLs by SHA-256.
+The three original patch DLLs remain byte-identical to release 1.0.0.
+HarmonySupport is the new 1.1.0 binary, built with zero errors.
+111 native hook chain checks passed, including callbacks, patch refresh, GC and byref forwarding.
+Original Hello Melon 1.0.0 SHA-256 was verified before deployment and during the final game run.
+In-game cannon inspector: Hello Melon hook logged success, QoL Gun length panel rendered, game remained running.
+Runtime evidence and limits are described in MELON-HOOK-CRASH.md and VALIDATION.md.
+Source ZIP and release ZIP are CRC checked by tools/package-release.py.
+Personal game data and generated game assemblies are excluded.

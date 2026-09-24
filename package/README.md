@@ -1,6 +1,10 @@
-# Sprocket Mod Loader compatibility pack 1.0.0
+# Sprocket Mod Loader compatibility pack 1.1.0
 
-An **unofficial Sprocket-specific patch for BepInEx 6 be.788**, prepared 23 September 2026. It lets compatible BepInEx IL2CPP mods load on the tested Sprocket build. This is the loader/injector package, not the turret mod and not an official BepInEx release.
+An **unofficial Sprocket-specific patch for BepInEx 6 be.788**, updated 24 September 2026. It lets compatible BepInEx IL2CPP mods load on the tested Sprocket build. This is the loader/injector package, not the turret mod and not an official BepInEx release.
+
+## New in 1.1.0
+
+The loader now shares native hooks between BepInEx wrappers and MLLoader aliases. This fixes the tested cannon-inspector crash with original Hello Melon 1.0.0 and Sprocket QoL 1.3.0. See MELON-HOOK-CRASH.md. Existing 1.0.0 installs need the new `Patch/BepInEx/core/Il2CppInterop.HarmonySupport.dll`; update it with the game closed and through your manager if it owns the loader. No changes to Hello Melon are needed.
 
 ## Supported game
 
@@ -45,6 +49,6 @@ See **WHY-THE-OLD-LOADER-FAILED.md** for the black-screen/crash explanation and 
 
 ## Share and source
 
-Share the original **Sprocket-Mod-Loader-1.0.0.zip**. Recipients prepare their own official base download. No personal saves, blueprints, game binaries, generated game assemblies, or gameplay plugins are included. Do not distribute your installed game folder or a populated BepInEx folder.
+Share the original **Sprocket-Mod-Loader-1.1.0.zip**. Recipients prepare their own official base download. No personal saves, blueprints, game binaries, generated game assemblies, or gameplay plugins are included. Do not distribute your installed game folder or a populated BepInEx folder.
 
 `Source/Il2CppInterop-patched-source.zip` contains the corresponding bridge source, build instructions and modification notices. The patched bridge is LGPL-3.0-only; TerraFX remains MIT. License texts and attribution are in Licenses and THIRD-PARTY-NOTICES.md. The preparation scripts use LGPL-3.0-only. BepInEx and its bundled dependencies are downloaded unchanged from the upstream host before the bridge overlay is applied locally; they retain their upstream licenses. This is an unofficial compatibility package with no upstream endorsement.

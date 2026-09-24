@@ -1,4 +1,4 @@
-# Sprocket compatibility pack 1.0.0, 2026-09-23. LGPL-3.0-only.
+# Sprocket compatibility pack 1.1.0, 2026-09-24. LGPL-3.0-only.
 # Prepares files beside this script. Does not install into or launch the game.
 [CmdletBinding()]
 param([string]$BaseZip)
@@ -14,6 +14,7 @@ $download = 'https://builds.bepinex.dev/projects/bepinex_be/788/BepInEx-Unity.IL
 $patchHashes = @{
     'Il2CppInterop.Runtime.dll' = '95ADB947689BEE0CC62CD58C507A7E9ACF83D5503758676BEA6B3A47F5E4057D'
     'Il2CppInterop.Common.dll' = '038C846C8D37FBD27C776EC7054B6D22ED09DEFFCDF0C27F63ED511FC1AA4823'
+    'Il2CppInterop.HarmonySupport.dll' = '5915DE42EE76560879BE821EED6291A4E30C590902D52D1DC127796C3C76EEBF'
     'TerraFX.Interop.Windows.dll' = '6E3DD6E4CDBBC4A9439EAD4F6A49A25911379680C6342562132C3E6B6192969B'
 }
 $output = Join-Path $PSScriptRoot 'Ready-to-copy'

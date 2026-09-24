@@ -20,6 +20,9 @@ namespace Il2CppInterop.HarmonySupport;
 
 internal unsafe class Il2CppDetourMethodPatcher : MethodPatcher
 {
+    // Modified 2026-09-24: MLLoader aliases must share a native detour with the
+    // canonical BepInEx wrapper instead of patching its managed callback thunk.
+    private static readonly Dictionary<IntPtr, SprocketNativeHookChain> SprocketHookSites = new();
     private static readonly MethodInfo IL2CPPToManagedStringMethodInfo
         = AccessTools.Method(typeof(IL2CPP),
             nameof(IL2CPP.Il2CppStringToManaged));
@@ -142,10 +145,27 @@ internal unsafe class Il2CppDetourMethodPatcher : MethodPatcher
         var unmanagedDelegate = unmanagedTrampolineMethod.CreateDelegate(unmanagedDelegateType);
         DelegateCache.Add(unmanagedDelegate);
 
-        nativeDetour =
-            Il2CppInteropRuntime.Instance.DetourProvider.Create(originalNativeMethodInfo.MethodPointer, unmanagedDelegate);
-        nativeDetour.Apply();
-        modifiedNativeMethodInfo.MethodPointer = nativeDetour.OriginalTrampoline;
+        if (SprocketUnity6Profile.Active)
+        {
+            lock (SprocketHookSites)
+            {
+                var address = originalNativeMethodInfo.MethodPointer;
+                if (!SprocketHookSites.TryGetValue(address, out var site))
+                {
+                    site = new SprocketNativeHookChain(unmanagedDelegateType,
+                        relay => Il2CppInteropRuntime.Instance.DetourProvider.Create(address, relay));
+                    SprocketHookSites.Add(address, site);
+                }
+                site.Install(this, unmanagedDelegate, next => modifiedNativeMethodInfo.MethodPointer = next);
+            }
+        }
+        else
+        {
+            nativeDetour =
+                Il2CppInteropRuntime.Instance.DetourProvider.Create(originalNativeMethodInfo.MethodPointer, unmanagedDelegate);
+            nativeDetour.Apply();
+            modifiedNativeMethodInfo.MethodPointer = nativeDetour.OriginalTrampoline;
+        }
 
         // TODO: Add an ILHook for the original unhollowed method to go directly to managedHookedMethod
         // Right now it goes through three times as much interop conversion as it needs to, when being called from managed side

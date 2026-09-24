@@ -2,9 +2,11 @@
 
 An unofficial **BepInEx be.788 compatibility patch** for **Sprocket 0.2.55.5 / Unity 6000.3.21f1 on Windows x64**. It repairs the IL2CPP bridge so compatible BepInEx mods can run on the tested game build.
 
-**[Download version 1.0.0](https://github.com/Hans21223/Sprocket-Mod-Loader/releases/tag/v1.0.0)**
+**[Download version 1.1.0](https://github.com/Hans21223/Sprocket-Mod-Loader/releases/tag/v1.1.0)**
 
-Download **Sprocket-Mod-Loader-1.0.0.zip** from the release assets. Extract it and double-click **Prepare Loader.cmd**. It downloads the exact official BepInEx build, checks the files, and creates a **Ready-to-copy** folder. It does not automatically change or launch the game. Follow the [installation and removal instructions](package/README.md) before copying its contents beside Sprocket.exe.
+Download **Sprocket-Mod-Loader-1.1.0.zip** from the release assets. Extract it and double-click **Prepare Loader.cmd**. It downloads the exact official BepInEx build, checks the files, and creates a **Ready-to-copy** folder. It does not automatically change or launch the game. Follow the [installation and removal instructions](package/README.md) before copying its contents beside Sprocket.exe.
+
+**New in 1.1.0:** fixes the native-hook collision between MLLoader mods and BepInEx mods. Original Hello Melon 1.0.0 and Sprocket QoL now run their cannon-inspector patches together in the tested setup. [Cause, fix and validation](docs/MELON-HOOK-CRASH.md).
 
 This is a loader package; gameplay mods are installed separately. The repository's GitHub-generated source ZIP is intended for developers, not the player download.
 
@@ -24,7 +26,7 @@ The bridge checks the GameAssembly.dll SHA-256 and function starting bytes befor
 18A9A15B5E5F11898ED4DC34FC3E2D4C12950C3B37AC1FA499E8B00592DEDD56
 ```
 
-**Other game builds are unsupported.** A Sprocket update requires revalidation, not just changing this hash. This is not a universal Unity 6 fix, and it does not establish MLLoader or MelonLoader compatibility.
+**Other game builds are unsupported.** A Sprocket update requires revalidation, not just changing this hash. This is not a universal Unity 6 fix, and only the documented MLLoader test combination has been verified. Standalone MelonLoader is not covered.
 
 ## Verification
 
