@@ -2,7 +2,7 @@
 
 Windows, Python 3.11 or newer with Tkinter. Pillow is optional for image previews.
 
-1. Extract this folder beside `Sprocket.exe` as `ModManager`. Existing users copy `modman.pyw` and `loader_setup.py` into their manager folder; keep their existing games.json, mods, state and backup folders.
+1. Extract this folder beside `Sprocket.exe` as `ModManager`. Existing users copy `modman.pyw`, `loader_setup.py` and `mod_compat.py` into their manager folder; keep their existing games.json, mods, state and backup folders.
 2. Double-click `modman.pyw`. A fresh manager next to Sprocket detects its game folder; otherwise use **Add game**.
 3. Select the intended game copy, close Sprocket, then click **Install mod loader**.
 4. On the first run, choose the **MLLoader IL2CPP BepInEx6 V0.7.3 / 2.3.9 ZIP** downloaded from [Tong317's Nexus page](https://www.nexusmods.com/ironnest/mods/26). The verified ZIP is cached locally; later installations use one click. It is not redistributed here.
@@ -48,4 +48,4 @@ The 1.2.0 bridge includes both the earlier shared-hook repair and the by-referen
 
 This is a preview: a separate crash during shutdown remains unresolved. Installation and repeat verification of all 316 package files passed on both the Steam and test copies; nine installer regression tests and the manager self-test passed.
 
-The manager package contains source only, under the repository's LGPL-3.0 license; no game files, user configuration, saves, gameplay mods or cached downloads. Run `python modman.pyw --selftest` and `python -m unittest -v test_loader_setup` from this folder for local checks.
+The manager package contains source only, under the repository's LGPL-3.0 license; no game files, user configuration, saves, gameplay mods or cached downloads. Run `python modman.pyw --selftest`, `python -m unittest -v test_loader_setup` and `python -m unittest -v test_mod_compat` from this folder for local checks.
