@@ -12,6 +12,26 @@ This installs Doorstop/BepInEx files on disk for the next game launch. It does n
 
 Prefer no installer script at all? Follow the [manual File Explorer instructions](https://github.com/Hans21223/Sprocket-Mod-Loader/blob/main/package/MANUAL-INSTALL.md). The loader and mods still run code when the game starts; Python is not inherently a safety guarantee. The manager's safeguards are exact download checksums, published source, game-build checks, backups and rollback.
 
+## Where mods go, and why a mod doesn't work
+
+Add a mod as a ZIP, folder or single DLL. The manager reads each DLL's .NET metadata (it never runs it) and puts it
+where its loader looks: MelonLoader mods in `MLLoader\Mods`, MelonLoader plugins in `MLLoader\Plugins`, libraries in
+`MLLoader\UserLibs`, BepInEx plugins in `BepInEx\plugins`. A full folder layout inside the mod is kept as it is.
+
+A mod can install correctly and still not work, because it was made for another version of the game or of Unity.
+When you enable one, the manager warns you if it can tell, and **Mod report** (or `python modman.pyw --report "Sprocket"`)
+lists for every enabled mod:
+
+- things it needs that the game and its loaders don't have (for example a part of the game this version dropped);
+- game or Unity code it calls that this version doesn't have (checked by name and number of arguments), which it will
+  throw errors on;
+- libraries that do nothing because no installed mod uses them;
+- enabled mods whose files were deleted outside the manager;
+- which mod each error in the last game session's log came from, and text the game's font can't show.
+
+The manager can't fix these: they need an update from the mod's author. `python -m unittest -v test_mod_compat` checks
+the metadata reader.
+
 ## Updates and removal
 
 Overlapping loader-only entries are replaced by **Sprocket mod loader - BepInEx + MLLoader**. Unrelated mods remain enabled. An entry containing both loader files and additional content is refused so it can be separated first. Repeat setup verifies an existing installation and repairs changed package files; changed configuration files covered by the package are backed up.

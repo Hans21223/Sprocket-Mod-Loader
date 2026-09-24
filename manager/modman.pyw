@@ -2,6 +2,7 @@
 
   modman.pyw                    GUI (double-click)
   python modman.pyw --selftest  self-check
+  python modman.pyw --report "Sprocket"  why enabled mods may not work (also the "Mod report" button)
 
 A mod is a folder, archive or single file in mods/<Game>/<Mod>/. Enable copies it into the game
 (originals saved to backup/), disable puts them back. Where each file lands is decided by games.json:
@@ -40,6 +41,19 @@ def save(path, data):
 def stamp(path):
     st = path.stat()
     return [st.st_size, st.st_mtime_ns]
+
+
+def restore_file(backup, destination):
+    """Restore across volumes; keep backup until the destination replacement succeeds."""
+    destination.parent.mkdir(parents=True, exist_ok=True)
+    descriptor, temporary = tempfile.mkstemp(prefix='.modman-restore-', dir=destination.parent)
+    os.close(descriptor)
+    try:
+        shutil.copy2(backup, temporary)
+        os.replace(temporary, destination)
+        backup.unlink()
+    finally:
+        Path(temporary).unlink(missing_ok=True)
 
 
 def sha256(path):
@@ -87,7 +101,9 @@ class Game:
         base = self.mods_dir / mod
         srcs = [p.relative_to(base).parts for p in base.rglob("*") if p.is_file()]
         srcs = [s for s in srcs if s[0].lower() != INJECT_DIR]
-        return {"/".join(s): "/".join(self.dest(s, srcs)) for s in srcs}
+        files = {"/".join(s): "/".join(self.dest(s, srcs)) for s in srcs}
+        from mod_compat import plan
+        return plan(self, base, files)
 
     def add(self, src):
         src = Path(src)
@@ -108,6 +124,8 @@ class Game:
         if mod in self.enabled:
             return self.enabled[mod]
         files = self.files(mod)
+        from mod_compat import validate
+        validate(self, self.mods_dir / mod, files)
         owners = {d.lower(): m for m, fs in self.enabled.items() for d in fs}
         shared = {d.lower() for s, d in files.items() if d.lower() in owners and self.target(d).is_file()
                   and filecmp.cmp(self.mods_dir / mod / s, self.target(d), shallow=False)}  # same decal in two packs
@@ -149,7 +167,7 @@ class Game:
                     if bak.exists():
                         os.replace(bak, bak.with_name(bak.name + ".kept"))
                 elif bak.exists():
-                    os.replace(bak, dst)
+                    restore_file(bak, dst)
                 else:
                     dst.unlink(missing_ok=True)
                 del files[rel]
@@ -202,6 +220,31 @@ class Game:
         shutil.copy2(copy, self.root / rel)
         if sha256(self.root / rel) != guard[rel]:
             raise RuntimeError(f"Restoring {rel} failed (is the game still running?)")
+
+
+def mod_report(g):
+    """Why enabled mods may not work: what their DLLs need or call that this game doesn't have, and which mod each
+    error in the last game session's log came from. Reads files only; nothing is run."""
+    import mod_compat
+    lines = []
+    gone = {m: [rel for rel in files if not g.target(rel).exists()] for m, files in g.enabled.items()}
+    for m, rels in gone.items():
+        if rels:
+            lines.append(f"[{m}] is enabled but {len(rels)} of its files are missing from the game (deleted outside the "
+                         f"Mod Manager, e.g. {rels[0]}). Disable and enable it again to put them back.")
+    if lines:
+        lines.append("")
+    lines.append("Mods that install fine but can't fully work in this game:")
+    notes = [(m, n) for m in g.enabled if (g.mods_dir / m).is_dir() for n in mod_compat.check(g, g.mods_dir / m, g.files(m))]
+    lines += [f"  - [{m}] {n}" for m, n in notes] or ["  (none found)"]
+    log, report = mod_compat.log_report(g, {m: [g.target(rel) for rel in files] for m, files in g.enabled.items()})
+    if log is None:
+        lines += ["", "No game log yet: launch the game once, then check again."]
+    else:
+        when = time.strftime("%Y-%m-%d %H:%M", time.localtime(log.stat().st_mtime))
+        lines += ["", f"Errors in the last game session (log {log}, {when}):"]
+        lines += [f"  - {who}: {count}x  {first}" for who, count, first in report] or ["  (none)"]
+    return lines
 
 
 k32 = ctypes.WinDLL("kernel32", use_last_error=True)
@@ -840,6 +883,26 @@ def gui():
         else:
             files = list(g.enable(m))
             status["text"] = f"Enabled {m}: {len(files)} file(s) -> {os.path.commonpath(files) if files else '-'}"
+            import mod_compat
+            notes = mod_compat.check(g, g.mods_dir / m, g.files(m))
+            if notes:
+                messagebox.showwarning("Mod Manager", f"{m} is enabled, but it won't fully work in this game:\n\n" + "\n\n".join(notes))
+
+    def show_report():
+        g = game()
+        status["text"] = "Checking mods..."
+        win.update_idletasks()
+        text = "\n".join(mod_report(g))
+        status["text"] = "Mod report ready."
+        top_win = tk.Toplevel(win)
+        top_win.title(f"Mod report - {g.name}")
+        view = tk.Text(top_win, wrap="word", width=110, height=34, font=("Consolas", 10))
+        bar = ttk.Scrollbar(top_win, command=view.yview)
+        view.configure(yscrollcommand=bar.set)
+        bar.pack(side="right", fill="y")
+        view.pack(fill="both", expand=True)
+        view.insert("1.0", text)
+        view.configure(state="disabled")
 
     def add_game():
         d = filedialog.askdirectory(title="Game install folder")
@@ -976,7 +1039,7 @@ def gui():
     box.bind("<Double-1>", act(toggle))
     bottom = ttk.Frame(win)
     bottom.pack(fill="x", padx=8, pady=6)
-    for text, fn in [("Add mod", add_mod), ("Enable / Disable", toggle), ("Refresh", lambda: None),
+    for text, fn in [("Add mod", add_mod), ("Enable / Disable", toggle), ("Refresh", lambda: None), ("Mod report", show_report),
                      ("Install mod loader", setup_loader), ("Launch", launch), ("Inject DLL", inject_manual)]:
         ttk.Button(bottom, text=text, command=act(fn)).pack(side="left", padx=(0, 6))
     status = ttk.Label(win, text="Double-click a mod to enable/disable it.")
@@ -1174,4 +1237,10 @@ def selftest():
 
 
 if __name__ == "__main__":
-    selftest() if "--selftest" in sys.argv else gui()
+    if "--selftest" in sys.argv:
+        selftest()
+    elif "--report" in sys.argv:  # python modman.pyw --report "<game name from games.json>"
+        name = sys.argv[sys.argv.index("--report") + 1]
+        print("\n".join(mod_report(Game(HOME, name, **load(HOME / "games.json", {})[name]))))
+    else:
+        gui()
