@@ -1,6 +1,6 @@
 # Mod Manager with one-click loader setup
 
-Windows, Python 3.11 or newer with Tkinter. Pillow is optional for image previews.
+Windows, Python 3.9 or newer with Tkinter. Pillow is optional for image previews.
 
 1. Extract this folder beside `Sprocket.exe` as `ModManager`. Existing users copy `modman.pyw`, `loader_setup.py` and `mod_compat.py` into their manager folder; keep their existing games.json, mods, state and backup folders.
 2. Double-click `modman.pyw`. A fresh manager next to Sprocket detects its game folder; otherwise use **Add game**.

@@ -1237,6 +1237,16 @@ def selftest():
 
 
 if __name__ == "__main__":
+    if sys.version_info < (3, 9):  # str.removeprefix, Path.is_relative_to
+        text = f"Mod Manager needs Python 3.9 or newer; this is Python {sys.version.split()[0]}. Get it from python.org."
+        try:
+            import tkinter
+            from tkinter import messagebox
+            tkinter.Tk().withdraw()
+            messagebox.showerror("Mod Manager", text)
+        except Exception:
+            print(text)
+        sys.exit(1)
     if "--selftest" in sys.argv:
         selftest()
     elif "--report" in sys.argv:  # python modman.pyw --report "<game name from games.json>"

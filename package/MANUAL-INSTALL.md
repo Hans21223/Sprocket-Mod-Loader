@@ -14,7 +14,7 @@ You do not need to run **Prepare Loader.cmd** or **Prepare-Loader.ps1** with thi
 
 | Method | Requirements | Checks and backups |
 | --- | --- | --- |
-| Mod Manager: Install mod loader | Python 3.11+ and Tkinter; no PowerShell | Checks exact game and package hashes; automatic file backups and failure rollback |
+| Mod Manager: Install mod loader | Python 3.9+ and Tkinter; no PowerShell | Checks exact game and package hashes; automatic file backups and failure rollback |
 | Manual File Explorer copy | No installer script or Python | You choose the exact packages and manage backups yourself |
 | Optional Prepare Loader helper | PowerShell | Verifies downloads and prepares files; you copy them into the game |
 

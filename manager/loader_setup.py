@@ -29,8 +29,12 @@ def remove_tree(path, parent):
 
 
 def digest(path):
+    # Read in chunks rather than hashlib.file_digest, which only exists from Python 3.11.
+    sha = hashlib.sha256()
     with Path(path).open('rb') as f:
-        return hashlib.file_digest(f, 'sha256').hexdigest()
+        for chunk in iter(lambda: f.read(1 << 20), b''):
+            sha.update(chunk)
+    return sha.hexdigest()
 
 
 def verify(path, expected):

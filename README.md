@@ -2,13 +2,15 @@
 
 An unofficial **BepInEx be.788 compatibility patch** for **Sprocket 0.2.55.5 / Unity 6000.3.21f1 on Windows x64**. It repairs the IL2CPP bridge so compatible BepInEx mods can run on the tested game build.
 
-**[Download Mod Manager 1.3.0](https://github.com/Hans21223/Sprocket-Mod-Loader/releases/tag/v1.3.0)** · **[Download loader 1.2.0](https://github.com/Hans21223/Sprocket-Mod-Loader/releases/tag/v1.2.0)**
+**[Download Mod Manager 1.3.1](https://github.com/Hans21223/Sprocket-Mod-Loader/releases/tag/v1.3.1)** · **[Download loader 1.2.0](https://github.com/Hans21223/Sprocket-Mod-Loader/releases/tag/v1.2.0)**
 
-For one-click setup, download **Sprocket-Mod-Manager-1.3.0.zip**, extract it beside Sprocket.exe as ModManager, open `modman.pyw`, and click **Install mod loader**. First use asks for your MLLoader 2.3.9 ZIP from Nexus. Requires Python 3.11+ on Windows. [Manager instructions](manager/README.md).
+For one-click setup, download **Sprocket-Mod-Manager-1.3.1.zip**, extract it beside Sprocket.exe as ModManager, open `modman.pyw`, and click **Install mod loader**. First use asks for your MLLoader 2.3.9 ZIP from Nexus. Requires Python 3.9+ on Windows. [Manager instructions](manager/README.md).
 
 For manual setup, download **Sprocket-Mod-Loader-1.2.0.zip** from the 1.2.0 release (the loader is unchanged in 1.3.0). Extract it and double-click **Prepare Loader.cmd** to create a **Ready-to-copy** folder. Follow the [installation and removal instructions](package/README.md).
 
 **Prefer no PowerShell?** The manager button uses Python, and [manual File Explorer installation](package/MANUAL-INSTALL.md) requires no installer script. The preparation helper is optional.
+
+**New in 1.3.1 (Mod Manager):** runs on Python 3.9 and newer. 1.3.0 stopped at startup with "module 'hashlib' has no attribute 'file_digest'" on Python 3.10 and older.
 
 **New in 1.3.0 (Mod Manager):** mods added as loose DLLs install where their loader looks, found by reading each DLL (never running it). Disabling a mod works across drives. Enabling a mod warns if it can't fully work in this game, and **Mod report** explains every enabled mod: things it needs that the game doesn't have, game or Unity code it calls that this build lacks, unused libraries, and which mod each error in the last game session came from. [Details](manager/README.md#where-mods-go-and-why-a-mod-doesnt-work).
 
