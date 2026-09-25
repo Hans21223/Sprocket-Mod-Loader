@@ -80,6 +80,20 @@ class SetupTests(unittest.TestCase):
         self.assertEqual((self.root / 'winhttp.dll').read_bytes(), b'loader')
         self.assertEqual((self.game.mods_dir / setup.MOD / 'winhttp.dll').read_bytes(), b'loader')
 
+    def test_remove_mod_restores_game_and_deletes_copy(self):
+        (self.root / 'part.json').write_bytes(b'original')
+        mod = self.game.mods_dir / 'gameplay'
+        mod.mkdir()
+        (mod / 'part.json').write_bytes(b'modded')
+        self.game.enable(mod.name)
+        self.game.remove(mod.name)
+        self.assertEqual((self.root / 'part.json').read_bytes(), b'original')
+        self.assertFalse(mod.exists())
+        self.assertNotIn('gameplay', self.game.enabled)
+        self.assertNotIn('gameplay', self.game.mods())
+        with self.assertRaisesRegex(RuntimeError, 'Refusing'):
+            self.game.remove('..')
+
     def test_mixed_mod_conflict_is_not_disabled(self):
         mod = self.game.mods_dir / 'mixed'
         mod.mkdir()
@@ -127,6 +141,81 @@ class SetupTests(unittest.TestCase):
                 setup.download(self.home, 'download.zip', 'https://example.com/test.zip', 'hash', lambda _: None)
         self.assertFalse((self.home / 'download.zip').exists())
         self.assertFalse((self.home / 'download.download').exists())
+
+
+class OneClickTests(unittest.TestCase):
+    """Install mod loader finds the game and MLLoader by itself, and works without MLLoader for BepInEx mods."""
+
+    def setUp(self):
+        self.temp = tempfile.TemporaryDirectory()
+        self.addCleanup(self.temp.cleanup)
+        self.home = Path(self.temp.name)
+        self.root = self.home / 'game'
+        self.root.mkdir()
+        self.game = Game(self.home, 'test', self.root, 'Sprocket.exe')
+        self.base = self.zip('base.zip', {'winhttp.dll': b'doorstop', 'doorstop_config.ini': b'config',
+                                          'BepInEx/core/Il2CppInterop.HarmonySupport.dll': b'upstream'})
+        self.patch = self.zip('patch.zip', {'Sprocket-Mod-Loader-1.2.0/Patch/BepInEx/core/Il2CppInterop.HarmonySupport.dll':
+                                            b'patched'})
+        self.melon = self.zip('downloads/MLLoader IL2CPP BepInEx6 V0.7.3-26-2-3-9.zip', {
+            'BepInEx/patchers/BepInEx.MelonLoader.Loader.Patcher.dll': b'patcher',
+            'MLLoader/MelonLoader/MelonLoader.dll': b'melon'})
+        # Stand-in packages: no network, and any game folder counts as the supported build.
+        for name, value in (('MELON_HASH', setup.digest(self.melon)), ('validate_game', lambda game, running: None),
+                            ('download', lambda cache, name, *args: self.base if name == setup.BASE_NAME else self.patch)):
+            patcher = patch.object(setup, name, value)
+            patcher.start()
+            self.addCleanup(patcher.stop)
+
+    def zip(self, name, files):
+        path = self.home / 'sources' / name
+        path.parent.mkdir(parents=True, exist_ok=True)
+        with zipfile.ZipFile(path, 'w') as z:
+            for member, data in files.items():
+                z.writestr(member, data)
+        return path
+
+    def test_finds_sprocket_in_another_steam_library(self):
+        steam, library = self.home / 'Steam', self.home / 'D Drive' / 'SteamLibrary'
+        (steam / 'steamapps').mkdir(parents=True)
+        (steam / 'steamapps/libraryfolders.vdf').write_text(
+            '"libraryfolders"\n{\n\t"0"\n\t{\n\t\t"path"\t\t"%s"\n\t}\n\t"1"\n\t{\n\t\t"path"\t\t"%s"\n\t}\n}\n'
+            % (str(steam).replace('\\', '\\\\'), str(library).replace('\\', '\\\\')))
+        self.assertIsNone(setup.find_sprocket(setup.steam_libraries([steam])))
+        game = library / 'steamapps/common/Sprocket'
+        game.mkdir(parents=True)
+        (game / 'Sprocket.exe').write_bytes(b'')
+        self.assertEqual(setup.find_sprocket(setup.steam_libraries([steam])), game)
+
+    def test_finds_downloaded_mlloader_and_caches_it(self):
+        other = self.zip('downloads/MelonLoader.x64.zip', {'version.dll': b'not MLLoader'})
+        self.assertIsNone(setup.find_melon(self.home, [other.parent.parent]))  # not in the searched folder itself
+        found = setup.find_melon(self.home, [self.melon.parent])
+        self.assertEqual(found, self.home / 'loader-cache' / setup.MELON_CACHE)
+        self.assertEqual(found.read_bytes(), self.melon.read_bytes())
+        self.assertEqual(setup.find_melon(self.home, []), found)  # cached from now on
+
+    def test_installs_without_mlloader_then_adds_it(self):
+        result = setup.install(self.game, self.home, None, lambda _: [])
+        self.assertIn('MLLoader was left out', result)
+        self.assertEqual((self.root / 'BepInEx/core/Il2CppInterop.HarmonySupport.dll').read_bytes(), b'patched')
+        self.assertFalse((self.root / 'MLLoader').exists())
+        self.assertFalse(setup.needs_melon(self.game))
+        (self.home / 'loader-cache' / setup.MELON_CACHE).write_bytes(b'damaged copy')  # ignored, not an error
+        self.assertIn('MLLoader was left out', setup.install(self.game, self.home, None, lambda _: []))
+        result = setup.install(self.game, self.home, self.melon, lambda _: [])
+        self.assertNotIn('left out', result)
+        self.assertEqual((self.root / 'MLLoader/MelonLoader/MelonLoader.dll').read_bytes(), b'melon')
+        self.assertEqual((self.root / 'BepInEx/core/Il2CppInterop.HarmonySupport.dll').read_bytes(), b'patched')
+        self.assertEqual(list(self.game.enabled), [setup.MOD])
+
+    def test_never_drops_mlloader_that_melon_mods_use(self):
+        setup.install(self.game, self.home, self.melon, lambda _: [])
+        (self.home / 'loader-cache' / setup.MELON_CACHE).unlink()
+        self.assertTrue(setup.needs_melon(self.game))
+        with self.assertRaisesRegex(RuntimeError, 'need MLLoader'):
+            setup.install(self.game, self.home, None, lambda _: [])
+        self.assertEqual((self.root / 'MLLoader/MelonLoader/MelonLoader.dll').read_bytes(), b'melon')
 
 
 if __name__ == '__main__':

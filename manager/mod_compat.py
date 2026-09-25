@@ -322,19 +322,49 @@ def plan(game, base, original):
     return result
 
 
+BEPINEX_CORE = 'BepInEx/core/BepInEx.Unity.IL2CPP.dll'
+
+
 def validate(game, base, files):
     if Path(game.exe).name.lower() != 'sprocket.exe': return
     errors = []
     patcher = 'BepInEx/patchers/BepInEx.MelonLoader.Loader.Patcher.dll'
-    has_loader = (game.root / patcher).is_file() or patcher.lower() in {d.lower() for d in files.values()}
+    dests = {d.lower() for d in files.values()}
+    has_loader = (game.root / patcher).is_file() or patcher.lower() in dests
+    has_bepinex = (game.root / BEPINEX_CORE).is_file() or BEPINEX_CORE.lower() in dests
     for src, dest in files.items():
         if not src.lower().endswith('.dll') or dest.lower().startswith(('bepinex/core/', 'dotnet/','mlloader/melonloader/')): continue
         info = inspect_dll(base / src)
         if info['kind'] in ('bepinex-mono','bepinex-old-il2cpp'):
             errors.append(f'{Path(src).name}: choose the BepInEx Unity IL2CPP CoreCLR build for this game.')
+        if info['kind'] == 'bepinex-il2cpp' and not has_bepinex:
+            errors.append('BepInEx is missing or disabled. Use Install mod loader to set it up first.')
         if info['kind'] in ('melon-mod','melon-plugin','melon-library') and not has_loader:
-            errors.append('MLLoader is missing or disabled. Use Install mod loader to repair it first.')
+            errors.append('MelonLoader mods need MLLoader, which is missing or disabled. Click Install mod loader and '
+                          'choose the MLLoader ZIP from Nexus Mods.')
     if errors: raise RuntimeError('\n'.join(dict.fromkeys(errors)))
+
+
+def separate_melonloader(root):
+    """True if a standalone MelonLoader (0.5 or 0.6+ layout) is in the game folder. MLLoader keeps its own copy under
+    MLLoader/MelonLoader, so this is a second loader."""
+    return any((Path(root) / 'MelonLoader' / p / 'MelonLoader.dll').is_file() for p in ('', 'net6', 'net35'))
+
+
+def loader_notes(game):
+    """Problems with the mod loader itself, which stop every mod rather than one; [] when none are seen."""
+    if Path(game.exe).name.lower() != 'sprocket.exe': return []
+    notes = []
+    if not (game.root / BEPINEX_CORE).is_file():
+        notes.append("The mod loader isn't installed, or it's disabled, so the mods you enable here can't load. "
+                     "Close the game, click Install mod loader, start the game once, then check again.")
+    elif not (game.root / 'BepInEx/LogOutput.log').is_file():
+        notes.append("The mod loader is installed but hasn't run yet. Start the game once, then check again.")
+    if separate_melonloader(game.root):
+        notes.append("There's also a separate MelonLoader in the game folder (its MelonLoader folder). This setup runs "
+                     "MelonLoader mods through MLLoader instead and hasn't been tested with a separate MelonLoader "
+                     "running too. Uninstall it with the MelonLoader installer, then add its mods here with Add mod.")
+    return notes
 
 
 # ---------- Why an installed mod can't work here ----------
@@ -345,6 +375,8 @@ GAME_CODE = ('MLLoader/MelonLoader/Il2CppAssemblies', 'BepInEx/interop', 'MelonL
 LIBRARIES = ('MLLoader', 'BepInEx', 'dotnet', 'MelonLoader', 'Mods', 'Plugins', 'UserLibs')
 MOD_FOLDERS = ('MLLoader/Mods', 'MLLoader/Plugins', 'MLLoader/UserLibs', 'BepInEx/plugins', 'Mods', 'Plugins', 'UserLibs')
 FRAMEWORK = ('System', 'Microsoft.', 'mscorlib', 'netstandard', 'WindowsBase', 'Mono.', 'Accessibility')
+# Assemblies the mod loaders themselves ship, rather than the game or another mod.
+LOADER_ASSEMBLIES = ('BepInEx', 'MelonLoader', 'Il2CppInterop', '0Harmony', 'MonoMod')
 OBJECT_MEMBERS = {'.ctor', 'ToString', 'Equals', 'GetHashCode', 'GetType', 'Finalize', 'MemberwiseClone'}
 
 
@@ -414,7 +446,14 @@ def check(game, base, files):
             continue
         name = Path(src).name
         missing = sorted({a for a in asm.assembly_refs if not a.startswith(FRAMEWORK) and a.lower() not in available})
-        if missing:
+        loader = [a for a in missing if a.startswith(LOADER_ASSEMBLIES)] if not (game.root / BEPINEX_CORE).is_file() else []
+        if loader:  # without the loader nothing else can be judged: it also generates the game's code on first run
+            notes.append(f'{name}: needs {", ".join(loader)}, part of the mod loader, which isn\'t installed or is '
+                         'disabled, so this mod can\'t load. Click Install mod loader, start the game once, then check again.')
+        elif missing and not game_code:
+            notes.append(f'{name}: needs {", ".join(missing)}. The mod loader creates the game\'s parts the first time the '
+                         'game starts with it, so start the game once, then check again.')
+        elif missing:
             where = ("this version of the game doesn't have" if all(a.startswith('Il2Cpp') for a in missing) else
                      "isn't installed (another mod it needs, or part of the game this version doesn't have)")
             notes.append(f'{name}: needs {", ".join(missing)}, which {where}. That part of the mod will fail.')

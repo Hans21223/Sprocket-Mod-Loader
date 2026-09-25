@@ -177,6 +177,20 @@ class Game:
             save(self.state, self.enabled)
         return kept
 
+    def remove(self, mod):
+        """Disable a mod, then delete the manager's copy of it. Returns the files kept as in disable()."""
+        folder = self.mods_dir / mod
+        if not folder.resolve().is_relative_to(self.mods_dir.resolve()) or folder.resolve() == self.mods_dir.resolve():
+            raise RuntimeError(f"Refusing to remove {folder}")
+        kept = self.disable(mod) if mod in self.enabled else []
+        if mod in self.enabled:
+            raise RuntimeError(f"{mod} couldn't be fully disabled, so it wasn't removed")
+        if folder.is_dir():
+            shutil.rmtree(folder)
+        elif folder.exists():
+            folder.unlink()
+        return kept
+
     def inject_dlls(self):
         return [p for m in self.enabled for p in (self.mods_dir / m / INJECT_DIR).glob("*.dll")]
 
@@ -226,7 +240,7 @@ def mod_report(g):
     """Why enabled mods may not work: what their DLLs need or call that this game doesn't have, and which mod each
     error in the last game session's log came from. Reads files only; nothing is run."""
     import mod_compat
-    lines = []
+    lines = [f"Mod loader: {n}" for n in mod_compat.loader_notes(g)]
     gone = {m: [rel for rel in files if not g.target(rel).exists()] for m, files in g.enabled.items()}
     for m, rels in gone.items():
         if rels:
@@ -833,10 +847,13 @@ def gui():
     import tkinter as tk
     from tkinter import filedialog, messagebox, simpledialog, ttk
 
+    import loader_setup
     cfg = HOME / "games.json"
     games = load(cfg, {})
-    if not games and (HOME.parent / 'Sprocket.exe').is_file():
-        games['Sprocket'] = {'dir': str(HOME.parent), 'exe': 'Sprocket.exe',
+    # First run: the game this folder sits in, else Sprocket in any Steam library.
+    found = None if games else HOME.parent if (HOME.parent / 'Sprocket.exe').is_file() else loader_setup.find_sprocket()
+    if found:
+        games['Sprocket'] = {'dir': str(found), 'exe': 'Sprocket.exe',
                              'route': {'BepInEx': '', 'dotnet': '', 'MLLoader': '',
                                        'Mods': 'MLLoader', 'Plugins': 'MLLoader',
                                        'UserLibs': 'MLLoader', 'UserData': 'MLLoader'}}
@@ -887,6 +904,16 @@ def gui():
             notes = mod_compat.check(g, g.mods_dir / m, g.files(m))
             if notes:
                 messagebox.showwarning("Mod Manager", f"{m} is enabled, but it won't fully work in this game:\n\n" + "\n\n".join(notes))
+
+    def remove_mod():
+        g, m = game(), selected()
+        if not messagebox.askyesno("Remove mod", f"Remove {m}?\n\nIts files leave the game, your original files come "
+                                   "back, and the Mod Manager's copy is deleted. To use it again, add it again."):
+            return
+        kept = g.remove(m)
+        status["text"] = f"Removed {m}"
+        if kept:
+            messagebox.showinfo("Mod Manager", "Kept these because they changed after install:\n" + "\n".join(kept))
 
     def show_report():
         g = game()
@@ -969,20 +996,31 @@ def gui():
 
     def setup_loader():
         import queue, threading
-        import loader_setup
         nonlocal installing
         if installing:
             return
         g = game()
         loader_setup.validate_game(g, pids)
-        melon = HOME / 'loader-cache' / 'MLLoader-2.3.9.zip'
-        if not melon.is_file():
-            chosen = filedialog.askopenfilename(title='Choose MLLoader IL2CPP 2.3.9 ZIP (Nexus Iron Nest mod 26)',
-                                                filetypes=[('MLLoader archive', '*.zip')])
-            if not chosen:
-                status['text'] = 'Setup cancelled. Get MLLoader IL2CPP 2.3.9 from nexusmods.com/ironnest/mods/26.'
+        # MLLoader only comes from Nexus Mods (it needs a login), so it can't be downloaded here: use a copy the
+        # user already has, found in Downloads or the Desktop, and only ask when there's none.
+        melon = loader_setup.find_melon(HOME)
+        if melon is None:
+            ask = loader_setup.needs_melon(g) or messagebox.askyesnocancel('Install mod loader',
+                "MLLoader wasn't found in Downloads or on the Desktop. It's only needed for MelonLoader mods, and it "
+                f"only comes from Nexus Mods: {loader_setup.MELON_PAGE}\n\n"
+                "Yes: choose the MLLoader ZIP you downloaded.\n"
+                "No: install without it now. BepInEx mods will work; click Install mod loader again later to add it.\n"
+                "Cancel: don't install anything.")
+            if ask is None:
+                status['text'] = 'Setup cancelled.'
                 return
-            melon = Path(chosen)
+            if ask:
+                chosen = filedialog.askopenfilename(title='Choose MLLoader IL2CPP 2.3.9 ZIP (Nexus Iron Nest mod 26)',
+                                                    filetypes=[('MLLoader archive', '*.zip')])
+                if not chosen:
+                    status['text'] = f'Setup cancelled. Get MLLoader IL2CPP 2.3.9 from {loader_setup.MELON_PAGE}'
+                    return
+                melon = Path(chosen)
         installing = True
         messages = queue.Queue()
         controls = [pick, box, *top.winfo_children()[1:], *bottom.winfo_children()]
@@ -1010,6 +1048,12 @@ def gui():
                     refresh()
                     if kind == 'error':
                         messagebox.showerror('Loader setup', text)
+                    else:
+                        import mod_compat
+                        if mod_compat.separate_melonloader(g.root):
+                            messagebox.showwarning('Loader setup', text + "\n\nThere's also a separate MelonLoader in "
+                                "the game folder. Uninstall it with the MelonLoader installer so only one loader runs, "
+                                "then add its mods here with Add mod.")
                     return
             win.after(100, poll)
 
@@ -1039,7 +1083,7 @@ def gui():
     box.bind("<Double-1>", act(toggle))
     bottom = ttk.Frame(win)
     bottom.pack(fill="x", padx=8, pady=6)
-    for text, fn in [("Add mod", add_mod), ("Enable / Disable", toggle), ("Refresh", lambda: None), ("Mod report", show_report),
+    for text, fn in [("Add mod", add_mod), ("Enable / Disable", toggle), ("Remove mod", remove_mod), ("Refresh", lambda: None), ("Mod report", show_report),
                      ("Install mod loader", setup_loader), ("Launch", launch), ("Inject DLL", inject_manual)]:
         ttk.Button(bottom, text=text, command=act(fn)).pack(side="left", padx=(0, 6))
     status = ttk.Label(win, text="Double-click a mod to enable/disable it.")
