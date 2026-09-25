@@ -833,10 +833,13 @@ def gui():
     import tkinter as tk
     from tkinter import filedialog, messagebox, simpledialog, ttk
 
+    import loader_setup
     cfg = HOME / "games.json"
     games = load(cfg, {})
-    if not games and (HOME.parent / 'Sprocket.exe').is_file():
-        games['Sprocket'] = {'dir': str(HOME.parent), 'exe': 'Sprocket.exe',
+    # First run: the game this folder sits in, else Sprocket in any Steam library.
+    found = None if games else HOME.parent if (HOME.parent / 'Sprocket.exe').is_file() else loader_setup.find_sprocket()
+    if found:
+        games['Sprocket'] = {'dir': str(found), 'exe': 'Sprocket.exe',
                              'route': {'BepInEx': '', 'dotnet': '', 'MLLoader': '',
                                        'Mods': 'MLLoader', 'Plugins': 'MLLoader',
                                        'UserLibs': 'MLLoader', 'UserData': 'MLLoader'}}
@@ -969,20 +972,31 @@ def gui():
 
     def setup_loader():
         import queue, threading
-        import loader_setup
         nonlocal installing
         if installing:
             return
         g = game()
         loader_setup.validate_game(g, pids)
-        melon = HOME / 'loader-cache' / 'MLLoader-2.3.9.zip'
-        if not melon.is_file():
-            chosen = filedialog.askopenfilename(title='Choose MLLoader IL2CPP 2.3.9 ZIP (Nexus Iron Nest mod 26)',
-                                                filetypes=[('MLLoader archive', '*.zip')])
-            if not chosen:
-                status['text'] = 'Setup cancelled. Get MLLoader IL2CPP 2.3.9 from nexusmods.com/ironnest/mods/26.'
+        # MLLoader only comes from Nexus Mods (it needs a login), so it can't be downloaded here: use a copy the
+        # user already has, found in Downloads or the Desktop, and only ask when there's none.
+        melon = loader_setup.find_melon(HOME)
+        if melon is None:
+            ask = loader_setup.needs_melon(g) or messagebox.askyesnocancel('Install mod loader',
+                "MLLoader wasn't found in Downloads or on the Desktop. It's only needed for MelonLoader mods, and it "
+                f"only comes from Nexus Mods: {loader_setup.MELON_PAGE}\n\n"
+                "Yes: choose the MLLoader ZIP you downloaded.\n"
+                "No: install without it now. BepInEx mods will work; click Install mod loader again later to add it.\n"
+                "Cancel: don't install anything.")
+            if ask is None:
+                status['text'] = 'Setup cancelled.'
                 return
-            melon = Path(chosen)
+            if ask:
+                chosen = filedialog.askopenfilename(title='Choose MLLoader IL2CPP 2.3.9 ZIP (Nexus Iron Nest mod 26)',
+                                                    filetypes=[('MLLoader archive', '*.zip')])
+                if not chosen:
+                    status['text'] = f'Setup cancelled. Get MLLoader IL2CPP 2.3.9 from {loader_setup.MELON_PAGE}'
+                    return
+                melon = Path(chosen)
         installing = True
         messages = queue.Queue()
         controls = [pick, box, *top.winfo_children()[1:], *bottom.winfo_children()]
@@ -1010,6 +1024,12 @@ def gui():
                     refresh()
                     if kind == 'error':
                         messagebox.showerror('Loader setup', text)
+                    else:
+                        import mod_compat
+                        if mod_compat.separate_melonloader(g.root):
+                            messagebox.showwarning('Loader setup', text + "\n\nThere's also a separate MelonLoader in "
+                                "the game folder. Uninstall it with the MelonLoader installer so only one loader runs, "
+                                "then add its mods here with Add mod.")
                     return
             win.after(100, poll)
 

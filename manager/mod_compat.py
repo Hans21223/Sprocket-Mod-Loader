@@ -340,8 +340,15 @@ def validate(game, base, files):
         if info['kind'] == 'bepinex-il2cpp' and not has_bepinex:
             errors.append('BepInEx is missing or disabled. Use Install mod loader to set it up first.')
         if info['kind'] in ('melon-mod','melon-plugin','melon-library') and not has_loader:
-            errors.append('MLLoader is missing or disabled. Use Install mod loader to repair it first.')
+            errors.append('MelonLoader mods need MLLoader, which is missing or disabled. Click Install mod loader and '
+                          'choose the MLLoader ZIP from Nexus Mods.')
     if errors: raise RuntimeError('\n'.join(dict.fromkeys(errors)))
+
+
+def separate_melonloader(root):
+    """True if a standalone MelonLoader (0.5 or 0.6+ layout) is in the game folder. MLLoader keeps its own copy under
+    MLLoader/MelonLoader, so this is a second loader."""
+    return any((Path(root) / 'MelonLoader' / p / 'MelonLoader.dll').is_file() for p in ('', 'net6', 'net35'))
 
 
 def loader_notes(game):
@@ -353,8 +360,7 @@ def loader_notes(game):
                      "Close the game, click Install mod loader, start the game once, then check again.")
     elif not (game.root / 'BepInEx/LogOutput.log').is_file():
         notes.append("The mod loader is installed but hasn't run yet. Start the game once, then check again.")
-    # A separate MelonLoader's own DLL (0.5 or 0.6+ layout); MLLoader keeps its copy under MLLoader/MelonLoader.
-    if any((game.root / 'MelonLoader' / p / 'MelonLoader.dll').is_file() for p in ('', 'net6', 'net35')):
+    if separate_melonloader(game.root):
         notes.append("There's also a separate MelonLoader in the game folder (its MelonLoader folder). This setup runs "
                      "MelonLoader mods through MLLoader instead and hasn't been tested with a separate MelonLoader "
                      "running too. Uninstall it with the MelonLoader installer, then add its mods here with Add mod.")

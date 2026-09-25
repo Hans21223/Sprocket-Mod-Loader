@@ -2,21 +2,16 @@
 
 Windows, Python 3.9 or newer with Tkinter (the [python.org](https://www.python.org/downloads/) installer includes it with the default options). Pillow is optional for image previews.
 
-Before you start, download the **MLLoader IL2CPP BepInEx6 V0.7.3 / 2.3.9 ZIP** from [Tong317's Nexus page](https://www.nexusmods.com/ironnest/mods/26). Keep it as a ZIP. It is not redistributed here.
+For MelonLoader mods, also download the **MLLoader IL2CPP BepInEx6 V0.7.3 / 2.3.9 ZIP** from [Tong317's Nexus page](https://www.nexusmods.com/ironnest/mods/26) and leave it in Downloads. The manager finds it there. MLLoader isn't redistributed here, and Nexus Mods needs a login, so the manager can't download it itself. BepInEx mods don't need it.
 
-1. **Put this `ModManager` folder in the Sprocket game folder**, next to `Sprocket.exe`. To find that folder: in Steam, right-click **Sprocket** → **Manage** → **Browse local files**. Open the manager ZIP and drag the `ModManager` folder in. Don't use **Extract All** with its suggested location: the extra folder it adds stops the manager finding the game.
-
-   ```text
-   Sprocket\
-   ├── ModManager\
-   │   └── modman.pyw
-   └── Sprocket.exe
-   ```
+1. **Put this `ModManager` folder somewhere it can stay.** The Sprocket game folder is a good place (in Steam, right-click **Sprocket** → **Manage** → **Browse local files**). It keeps the backups used to undo changes, so don't delete it later.
 
    **Upgrading?** Copy `modman.pyw`, `loader_setup.py` and `mod_compat.py` over the ones in your existing manager folder. Keep your games.json, mods, state and backup folders.
-2. **Close Sprocket**, then double-click `modman.pyw`. Sprocket is selected at the top. If it isn't, click **Add game**, choose the game folder, then choose `Sprocket.exe`.
-3. **Click Install mod loader.** The first time, choose the MLLoader ZIP you downloaded. The manager keeps a checked copy, so later installs need only the click.
-4. **Wait for "Installed and verified … loader files"** at the bottom. Setup downloads official BepInEx be.788 and the Sprocket 1.2.0 patch, checks their exact SHA-256 hashes, backs up the files it replaces, installs everything, and turns on one combined entry: `Sprocket mod loader - BepInEx + MLLoader`.
+2. **Close Sprocket**, then double-click `modman.pyw`. The manager finds Sprocket next to its folder or in any Steam library and selects it at the top. If it doesn't, click **Add game**, choose the game folder, then choose `Sprocket.exe`.
+3. **Click Install mod loader.** Setup downloads official BepInEx be.788 and the Sprocket 1.2.0 patch, checks their exact SHA-256 hashes, backs up the files it replaces, installs everything, and turns on one combined entry: `Sprocket mod loader - BepInEx + MLLoader`. MLLoader is included when its ZIP is in Downloads, on the Desktop, or in or next to this folder. The manager keeps a checked copy for later installs.
+
+   Without the ZIP it asks: **Yes** to choose it, **No** to install without MLLoader for now (click **Install mod loader** again later to add it). It won't leave MLLoader out once MelonLoader mods use it.
+4. **Wait for "Installed and verified … loader files"** at the bottom.
 5. **Click Launch.** The first start is slower than usual while BepInEx sets itself up.
 6. **Add gameplay mods:** click **Add mod**, choose the mod's ZIP, folder or DLL, then double-click it in the list to enable it (`[x]`). Add mods one at a time.
 
