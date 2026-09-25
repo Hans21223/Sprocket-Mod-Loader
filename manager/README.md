@@ -13,7 +13,7 @@ For MelonLoader mods, also download the **MLLoader IL2CPP BepInEx6 V0.7.3 / 2.3.
    Without the ZIP it asks: **Yes** to choose it, **No** to install without MLLoader for now (click **Install mod loader** again later to add it). It won't leave MLLoader out once MelonLoader mods use it.
 4. **Wait for "Installed and verified … loader files"** at the bottom.
 5. **Click Launch.** The first start is slower than usual while BepInEx sets itself up.
-6. **Add gameplay mods:** click **Add mod**, choose the mod's ZIP, folder or DLL, then double-click it in the list to enable it (`[x]`). Add mods one at a time.
+6. **Add gameplay mods:** click **Add mod**, choose the mod's ZIP, folder or DLL, then double-click it in the list to enable it (`[x]`). Add mods one at a time. To get rid of a mod, select it and click **Remove mod**: it's disabled, the game's originals come back, and the manager's copy is deleted.
 
 This installs Doorstop/BepInEx files on disk for the next game launch. It does not use PowerShell to inject code into a running process. The manager's separate **Inject DLL** feature is not used by this button.
 

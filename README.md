@@ -56,6 +56,7 @@ Add mods one at a time. If the game breaks, you'll know which mod caused it.
 ### Turn mods or the loader off
 
 - **One mod:** select it and click **Enable / Disable**.
+- **Delete a mod for good:** select it and click **Remove mod**. It's turned off first, so your original files come back, then the Mod Manager's copy is deleted.
 - **Back to the unmodded game:** disable `Sprocket mod loader - BepInEx + MLLoader`. Your original files are put back.
 - Don't delete the `backup` or `state` folders inside `ModManager`. The manager needs them to put your original files back.
 

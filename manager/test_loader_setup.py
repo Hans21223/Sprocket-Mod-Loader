@@ -80,6 +80,20 @@ class SetupTests(unittest.TestCase):
         self.assertEqual((self.root / 'winhttp.dll').read_bytes(), b'loader')
         self.assertEqual((self.game.mods_dir / setup.MOD / 'winhttp.dll').read_bytes(), b'loader')
 
+    def test_remove_mod_restores_game_and_deletes_copy(self):
+        (self.root / 'part.json').write_bytes(b'original')
+        mod = self.game.mods_dir / 'gameplay'
+        mod.mkdir()
+        (mod / 'part.json').write_bytes(b'modded')
+        self.game.enable(mod.name)
+        self.game.remove(mod.name)
+        self.assertEqual((self.root / 'part.json').read_bytes(), b'original')
+        self.assertFalse(mod.exists())
+        self.assertNotIn('gameplay', self.game.enabled)
+        self.assertNotIn('gameplay', self.game.mods())
+        with self.assertRaisesRegex(RuntimeError, 'Refusing'):
+            self.game.remove('..')
+
     def test_mixed_mod_conflict_is_not_disabled(self):
         mod = self.game.mods_dir / 'mixed'
         mod.mkdir()

@@ -177,6 +177,20 @@ class Game:
             save(self.state, self.enabled)
         return kept
 
+    def remove(self, mod):
+        """Disable a mod, then delete the manager's copy of it. Returns the files kept as in disable()."""
+        folder = self.mods_dir / mod
+        if not folder.resolve().is_relative_to(self.mods_dir.resolve()) or folder.resolve() == self.mods_dir.resolve():
+            raise RuntimeError(f"Refusing to remove {folder}")
+        kept = self.disable(mod) if mod in self.enabled else []
+        if mod in self.enabled:
+            raise RuntimeError(f"{mod} couldn't be fully disabled, so it wasn't removed")
+        if folder.is_dir():
+            shutil.rmtree(folder)
+        elif folder.exists():
+            folder.unlink()
+        return kept
+
     def inject_dlls(self):
         return [p for m in self.enabled for p in (self.mods_dir / m / INJECT_DIR).glob("*.dll")]
 
@@ -891,6 +905,16 @@ def gui():
             if notes:
                 messagebox.showwarning("Mod Manager", f"{m} is enabled, but it won't fully work in this game:\n\n" + "\n\n".join(notes))
 
+    def remove_mod():
+        g, m = game(), selected()
+        if not messagebox.askyesno("Remove mod", f"Remove {m}?\n\nIts files leave the game, your original files come "
+                                   "back, and the Mod Manager's copy is deleted. To use it again, add it again."):
+            return
+        kept = g.remove(m)
+        status["text"] = f"Removed {m}"
+        if kept:
+            messagebox.showinfo("Mod Manager", "Kept these because they changed after install:\n" + "\n".join(kept))
+
     def show_report():
         g = game()
         status["text"] = "Checking mods..."
@@ -1059,7 +1083,7 @@ def gui():
     box.bind("<Double-1>", act(toggle))
     bottom = ttk.Frame(win)
     bottom.pack(fill="x", padx=8, pady=6)
-    for text, fn in [("Add mod", add_mod), ("Enable / Disable", toggle), ("Refresh", lambda: None), ("Mod report", show_report),
+    for text, fn in [("Add mod", add_mod), ("Enable / Disable", toggle), ("Remove mod", remove_mod), ("Refresh", lambda: None), ("Mod report", show_report),
                      ("Install mod loader", setup_loader), ("Launch", launch), ("Inject DLL", inject_manual)]:
         ttk.Button(bottom, text=text, command=act(fn)).pack(side="left", padx=(0, 6))
     status = ttk.Label(win, text="Double-click a mod to enable/disable it.")
