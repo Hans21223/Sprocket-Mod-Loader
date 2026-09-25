@@ -29,10 +29,12 @@ Prefer no installer script at all? Follow the [manual File Explorer instructions
 Add a mod as a ZIP, folder or single DLL. The manager reads each DLL's .NET metadata (it never runs it) and puts it
 where its loader looks: MelonLoader mods in `MLLoader\Mods`, MelonLoader plugins in `MLLoader\Plugins`, libraries in
 `MLLoader\UserLibs`, BepInEx plugins in `BepInEx\plugins`. A full folder layout inside the mod is kept as it is.
+A mod whose loader isn't installed yet can't be enabled: click **Install mod loader** first.
 
 A mod can install correctly and still not work, because it was made for another version of the game or of Unity.
 When you enable one, the manager warns you if it can tell, and **Mod report** (or `python modman.pyw --report "Sprocket"`)
-lists for every enabled mod:
+first says if the mod loader isn't installed, hasn't run yet, or shares the game folder with a separate
+MelonLoader. Then it lists for every enabled mod:
 
 - things it needs that the game and its loaders don't have (for example a part of the game this version dropped);
 - game or Unity code it calls that this version doesn't have (checked by name and number of arguments), which it will

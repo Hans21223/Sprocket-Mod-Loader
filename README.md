@@ -124,6 +124,8 @@ The loader ZIP also contains **Prepare Loader.cmd**, an optional helper that dow
 | *module 'hashlib' has no attribute 'file_digest'* | You have Mod Manager 1.3.0. [Download 1.3.1](https://github.com/Hans21223/Sprocket-Mod-Loader/releases/download/v1.3.1/Sprocket-Mod-Manager-1.3.1.zip). |
 | Double-clicking `modman.pyw` does nothing, or opens it as text | Python isn't installed, or Windows doesn't know to open `.pyw` files with it. Install Python from [python.org](https://www.python.org/downloads/) with the default options, then right-click `modman.pyw` → **Open with** → **Python**. |
 | Black screen or crash at startup after a manual install | The patch probably isn't in place. Repeat [manual step 5](#manual-install-no-python). |
+| **Mod report** says a mod *needs BepInEx.Core, BepInEx.Unity.IL2CPP, which isn't installed*, or says the mod loader isn't installed | The loader isn't installed in this game folder, or it's disabled. Close the game, click **Install mod loader**, start the game once, then click **Mod report** again. |
+| There's a `MelonLoader` folder in the game folder, or **Mod report** reads its log from `MelonLoader\Latest.log` | That's a separate MelonLoader. This setup doesn't use it and hasn't been tested with it. Uninstall it with the MelonLoader installer, install this loader, then add your MelonLoader mods again with **Add mod**. |
 | A mod is on but doesn't do anything, or shows errors | In the Mod Manager, click **Mod report**. It lists what the mod needs that this Sprocket version doesn't have, and which mod each error in the last game session came from. Only the mod's author can fix these. |
 | The game crashes when you quit | A known problem in this preview version that hasn't been fixed yet. |
 

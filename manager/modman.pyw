@@ -226,7 +226,7 @@ def mod_report(g):
     """Why enabled mods may not work: what their DLLs need or call that this game doesn't have, and which mod each
     error in the last game session's log came from. Reads files only; nothing is run."""
     import mod_compat
-    lines = []
+    lines = [f"Mod loader: {n}" for n in mod_compat.loader_notes(g)]
     gone = {m: [rel for rel in files if not g.target(rel).exists()] for m, files in g.enabled.items()}
     for m, rels in gone.items():
         if rels:
