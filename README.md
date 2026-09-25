@@ -57,7 +57,8 @@ Add mods one at a time. If the game breaks, you'll know which mod caused it.
 
 - **One mod:** select it and click **Enable / Disable**.
 - **Delete a mod for good:** select it and click **Remove mod**. It's turned off first, so your original files come back, then the Mod Manager's copy is deleted.
-- **Back to the unmodded game:** disable `Sprocket mod loader - BepInEx + MLLoader`. Your original files are put back.
+- **Back to the unmodded game, keeping your mods:** disable `Sprocket mod loader - BepInEx + MLLoader`. Your original files are put back.
+- **Remove everything:** click **Remove all mods**. It removes every mod and the mod loader, deletes what the loader left in the game folder (`BepInEx`, `MLLoader`, `dotnet`, `winhttp.dll` and so on, with mod settings and logs), and puts your original files back. Saves and tanks aren't touched. It lists what it will delete and asks first.
 - Don't delete the `backup` or `state` folders inside `ModManager`. The manager needs them to put your original files back.
 
 More on the manager, including upgrading from an older version: [manager/README.md](manager/README.md).

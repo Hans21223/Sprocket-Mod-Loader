@@ -191,6 +191,35 @@ class Game:
             folder.unlink()
         return kept
 
+    # What BepInEx, MLLoader and Doorstop leave in a Sprocket folder once every mod is disabled: generated interop and
+    # caches, configs, logs, and loader files that came from outside the manager.
+    LOADER_LEFTOVERS = ("BepInEx", "MLLoader", "dotnet", "winhttp.dll", "doorstop_config.ini", ".doorstop_version")
+
+    def leftovers(self):
+        """Loader files and folders still in the game folder (Sprocket only), which Remove all mods deletes."""
+        if Path(self.exe).name.lower() != "sprocket.exe":
+            return []
+        found = [self.root / n for n in self.LOADER_LEFTOVERS if (self.root / n).exists()]
+        log = self.root / "changelog.txt"  # BepInEx ships one; only take it if it's BepInEx's
+        if log.is_file() and "bepinex" in log.read_bytes()[:4096].decode("utf-8", "replace").lower():
+            found.append(log)
+        return found
+
+    def remove_all(self, loader_mod=None):
+        """Remove every mod (the loader entry last, after the mods that run on it), then delete loader leftovers.
+        Returns (files kept because they changed after install, leftovers deleted)."""
+        mods = sorted(self.mods(), key=lambda m: m == loader_mod)
+        kept = [rel for m in mods for rel in self.remove(m)]
+        gone = self.leftovers()
+        for path in gone:
+            if path.resolve().parent != self.root.resolve():
+                raise RuntimeError(f"Refusing to delete {path}")
+            if path.is_dir() and not path.is_symlink():
+                shutil.rmtree(path)
+            else:
+                path.unlink()
+        return kept, gone
+
     def inject_dlls(self):
         return [p for m in self.enabled for p in (self.mods_dir / m / INJECT_DIR).glob("*.dll")]
 
@@ -915,6 +944,31 @@ def gui():
         if kept:
             messagebox.showinfo("Mod Manager", "Kept these because they changed after install:\n" + "\n".join(kept))
 
+    def remove_all_mods():
+        import loader_setup
+        g = game()
+        if pids(Path(g.exe).name):
+            raise RuntimeError(f"Close {Path(g.exe).name} first.")
+        mods, gone = g.mods(), g.leftovers()
+        if not mods and not gone:
+            status["text"] = "Nothing to remove: no mods and no loader files."
+            return
+        listed = "\n".join(f"  {m}" for m in mods[:12]) + (f"\n  and {len(mods) - 12} more" if len(mods) > 12 else "")
+        if not messagebox.askyesno("Remove all mods", "Remove EVERY mod, including the mod loader?\n\n" +
+                (f"Mods ({len(mods)}):\n{listed}\n\n" if mods else "") +
+                (f"Also deleted from the game folder: {', '.join(p.name for p in gone)} (loader files, with mod "
+                 "settings, logs and caches).\n\n" if gone else "") +
+                "Your original game files come back. Saves and tanks aren't touched. This can't be undone."):
+            return
+        kept, gone = g.remove_all(loader_setup.MOD)
+        status["text"] = f"Removed {len(mods)} mod(s) and {len(gone)} loader leftover(s). Sprocket is unmodded."
+        if kept:
+            messagebox.showinfo("Mod Manager", "Kept these because they changed after install:\n" + "\n".join(kept))
+        import mod_compat
+        if mod_compat.separate_melonloader(g.root):
+            messagebox.showwarning("Mod Manager", "A separate MelonLoader is still in the game folder. The Mod Manager "
+                                   "didn't install it, so it's left alone: uninstall it with the MelonLoader installer.")
+
     def show_report():
         g = game()
         status["text"] = "Checking mods..."
@@ -1083,7 +1137,7 @@ def gui():
     box.bind("<Double-1>", act(toggle))
     bottom = ttk.Frame(win)
     bottom.pack(fill="x", padx=8, pady=6)
-    for text, fn in [("Add mod", add_mod), ("Enable / Disable", toggle), ("Remove mod", remove_mod), ("Refresh", lambda: None), ("Mod report", show_report),
+    for text, fn in [("Add mod", add_mod), ("Enable / Disable", toggle), ("Remove mod", remove_mod), ("Remove all mods", remove_all_mods), ("Refresh", lambda: None), ("Mod report", show_report),
                      ("Install mod loader", setup_loader), ("Launch", launch), ("Inject DLL", inject_manual)]:
         ttk.Button(bottom, text=text, command=act(fn)).pack(side="left", padx=(0, 6))
     status = ttk.Label(win, text="Double-click a mod to enable/disable it.")
