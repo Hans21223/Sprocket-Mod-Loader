@@ -51,6 +51,8 @@ The manager puts each mod in the folder its loader reads, so you don't need to k
 
 Add mods one at a time. If the game breaks, you'll know which mod caused it.
 
+**A mod to start with: [Sprocket Quality of Life](https://github.com/Hans21223/Sprocket-Quality-of-Life/releases).** It adds tools to the vehicle editor's panels: turret to add-on, merging add-ons, Boolean cuts, gun length in calibers, speed and acceleration per gear, and more. Download the ZIP from its Releases page, then **Add mod** and enable it. It's a BepInEx mod, so it doesn't need MLLoader. If you have the older `Sprocket.TurretAddon.dll`, remove it: Quality of Life includes it.
+
 ### Turn mods or the loader off
 
 - **One mod:** select it and click **Enable / Disable**.
