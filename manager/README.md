@@ -1,6 +1,8 @@
 # Mod Manager with one-click loader setup
 
-Windows, Python 3.9 or newer with Tkinter (the [python.org](https://www.python.org/downloads/) installer includes it with the default options). Pillow is optional for image previews.
+Windows, Python 3.9 or newer with Tkinter. Pillow is optional for image previews.
+
+**No Python yet?** Install **Python install manager** from [python.org/downloads](https://www.python.org/downloads/), then open Command Prompt, type `py` and answer **y** to each question. If it opens **App execution aliases**, turn on **Python (default)**, **Python (default windowed)** and **Python install manager**, and turn off the **App Installer** `python.exe` / `python3.exe` entries. Check with `py --version`; if no Python is installed yet, run `py install default`. Full steps and fixes: [Install Python](https://github.com/Hans21223/Sprocket-Mod-Loader#install-python).
 
 For MelonLoader mods, also download the **MLLoader IL2CPP BepInEx6 V0.7.3 / 2.3.9 ZIP** from [Tong317's Nexus page](https://www.nexusmods.com/ironnest/mods/26) and leave it in Downloads. The manager finds it there. MLLoader isn't redistributed here, and Nexus Mods needs a login, so the manager can't download it itself. BepInEx mods don't need it.
 
