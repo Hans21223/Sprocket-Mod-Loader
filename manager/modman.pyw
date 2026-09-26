@@ -15,7 +15,7 @@ DLLs in a mod's _inject/ folder are injected into the game when you hit Launch.
 each image and which images each blueprint uses. Moving/renaming an image repoints those blueprints
 (originals copied to blueprint-backups/ first).
 """
-import csv, ctypes, filecmp, hashlib, json, math, os, re, shutil, subprocess, sys, tempfile, time, zipfile
+import csv, ctypes, filecmp, hashlib, json, math, os, re, shutil, subprocess, sys, tempfile, time, traceback, zipfile
 from collections import Counter
 from ctypes import wintypes as wt
 from fnmatch import fnmatch
@@ -1067,6 +1067,8 @@ def gui():
             win.destroy()
 
     win = tk.Tk()
+    # An error in a button no guarded() wraps would otherwise only reach the (invisible) console.
+    win.report_callback_exception = lambda *error: stopped("".join(traceback.format_exception(*error)))
     win.title("Mod Manager")
     win.protocol('WM_DELETE_WINDOW', close)
     dark(win)
@@ -1277,19 +1279,65 @@ def selftest():
         inject(child.pid, Path(os.environ["WINDIR"]) / "System32" / "winmm.dll")
     finally:
         child.kill()
+
+    # A manager opened without its other files (as from inside the ZIP) says so; a complete one has no startup problem.
+    with tempfile.TemporaryDirectory() as lone:
+        assert "inside the ZIP" in startup_problem(Path(lone))
+    assert startup_problem() is None
+    with tempfile.TemporaryDirectory() as folder:
+        log = crash_log("Traceback: test", [Path(folder) / "missing" / "deeper", Path(folder)])
+        assert log == Path(folder) / "modman-error.log" and "test" in log.read_text(encoding="utf-8")
     print("selftest ok")
+
+
+# Double-clicked, modman.pyw has no console: anything that stops it must be said in a box, or it just seems not to open.
+
+def startup_problem(home=HOME):
+    """Why the window can't open, said so a player can fix it, or None."""
+    missing = [name for name in ("loader_setup.py", "mod_compat.py") if not (home / name).is_file()]
+    if missing:
+        return (f"The Mod Manager's other files aren't next to it ({', '.join(missing)} missing).\n\n"
+                "If you opened it inside the ZIP, drag the ModManager folder out of the ZIP first, "
+                "then open modman from that folder.")
+    try:
+        import tkinter  # noqa: F401  (the window)
+    except ImportError:
+        return ("Python is installed without Tkinter, the part that draws windows.\n\n"
+                "Run the Python installer again, choose Modify, tick \"tcl/tk and IDLE\", finish, "
+                "then open the Mod Manager again.")
+    return None
+
+
+def fail(text):
+    """Windows' own message box: it works even when Tkinter is what's missing."""
+    try:
+        ctypes.windll.user32.MessageBoxW(None, text, "Mod Manager", 0x10)  # MB_ICONERROR
+    except Exception:
+        print(text)
+
+
+def crash_log(details, folders=None):
+    """The full error in modman-error.log (next to the manager, or in Temp if that folder can't be written): its path."""
+    for folder in folders or [HOME, Path(tempfile.gettempdir())]:
+        try:
+            path = folder / "modman-error.log"
+            path.write_text(details, encoding="utf-8")
+            return path
+        except OSError:
+            continue
+    return None
+
+
+def stopped(details):
+    """An error nothing else caught: saved and shown, never silent."""
+    log = crash_log(details)
+    fail("The Mod Manager hit an error:\n\n" + details.strip().splitlines()[-1]
+         + (f"\n\nThe details are saved in {log}. Send that file when you ask for help." if log else ""))
 
 
 if __name__ == "__main__":
     if sys.version_info < (3, 9):  # str.removeprefix, Path.is_relative_to
-        text = f"Mod Manager needs Python 3.9 or newer; this is Python {sys.version.split()[0]}. Get it from python.org."
-        try:
-            import tkinter
-            from tkinter import messagebox
-            tkinter.Tk().withdraw()
-            messagebox.showerror("Mod Manager", text)
-        except Exception:
-            print(text)
+        fail(f"Mod Manager needs Python 3.9 or newer; this is Python {sys.version.split()[0]}. Get it from python.org.")
         sys.exit(1)
     if "--selftest" in sys.argv:
         selftest()
@@ -1297,4 +1345,12 @@ if __name__ == "__main__":
         name = sys.argv[sys.argv.index("--report") + 1]
         print("\n".join(mod_report(Game(HOME, name, **load(HOME / "games.json", {})[name]))))
     else:
-        gui()
+        problem = startup_problem()
+        if problem:
+            fail(problem)
+            sys.exit(1)
+        try:
+            gui()
+        except Exception:
+            stopped(traceback.format_exc())
+            sys.exit(1)
