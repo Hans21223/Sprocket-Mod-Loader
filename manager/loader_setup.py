@@ -1,5 +1,6 @@
 """Verified, reversible Sprocket loader setup. No process injection or game-binary patching."""
 import copy
+import glob
 import hashlib
 import json
 import os
@@ -44,22 +45,69 @@ def verify(path, expected):
         raise RuntimeError(f'Checksum failed: {Path(path).name}. Obtain the exact supported ZIP again.')
 
 
-def download(cache, name, url, expected, report):
+def browser_copy(home, name, expected, folders=None):
+    """A copy of `name` downloaded in a browser that matches `expected`, or None. Browsers may rename it a little
+    (" (1)", or "%2B" for "+"), so anything starting with the part of the name before any "+" is checked."""
+    if folders is None:
+        folders = [Path.home() / 'Downloads', Path.home() / 'Desktop', Path(home), Path(home).parent]
+    pattern = glob.escape(name.split('+')[0].removesuffix('.zip')) + '*.zip'
+    for folder in folders:
+        try:
+            paths = list(Path(folder).glob(pattern))
+        except OSError:
+            continue
+        for path in paths:
+            try:
+                if path.is_file() and path.stat().st_size <= 256 << 20 and digest(path) == expected:
+                    return path
+            except OSError:
+                continue
+    return None
+
+
+def download(cache, name, url, expected, report, folders=None, tries=3):
+    """The checked package: cached, found where a browser saved it, or downloaded (tried again if it goes wrong)."""
     target = cache / name
     if target.exists():
+        if digest(target) == expected:
+            return target
+        target.unlink()  # a damaged copy: get it again
+    found = browser_copy(cache.parent, name, expected, folders)
+    if found:
+        report(f'Using {found}')
+        shutil.copyfile(found, target)
         verify(target, expected)
         return target
-    report(f'Downloading {name}...')
     temporary = target.with_suffix('.download')
+    problem = 'it could not be downloaded'
     try:
-        request = urllib.request.Request(url, headers={'User-Agent': 'Sprocket-Mod-Manager/1.0'})
-        with urllib.request.urlopen(request, timeout=60) as source, temporary.open('wb') as out:
-            shutil.copyfileobj(source, out)
-        verify(temporary, expected)
-        os.replace(temporary, target)
+        for attempt in range(1, tries + 1):
+            report(f'Downloading {name}...' if attempt == 1 else f'Downloading {name} again (try {attempt} of {tries})...')
+            try:
+                request = urllib.request.Request(url, headers={'User-Agent': 'Sprocket-Mod-Manager/1.0'})
+                with urllib.request.urlopen(request, timeout=60) as source, temporary.open('wb') as out:
+                    # Python doesn't notice a connection dropped mid-file, so the length is compared below.
+                    shutil.copyfileobj(source, out)
+                    length = source.headers.get('Content-Length', '')
+            except OSError as error:
+                problem = str(getattr(error, 'reason', None) or error)
+                continue
+            size = temporary.stat().st_size
+            if length.isdigit() and size < int(length):
+                problem = f'the download was cut off ({size:,} of {int(length):,} bytes)'
+                continue
+            if digest(temporary) == expected:
+                os.replace(temporary, target)
+                return target
+            with temporary.open('rb') as f:
+                start = f.read(2)
+            problem = ('the file that arrived is different from the official one' if start == b'PK' else
+                       'a web page arrived instead of the file (a network filter or antivirus may have blocked it)')
     finally:
         temporary.unlink(missing_ok=True)
-    return target
+    raise RuntimeError(f"Couldn't download {name}: {problem}.\n\nDownload it in your browser instead:\n{url}\n\n"
+                       'Leave it in your Downloads folder and click Install mod loader again. The manager finds it '
+                       'there and checks it the same way.')
 
 
 def extract(archive, destination, prefix=''):

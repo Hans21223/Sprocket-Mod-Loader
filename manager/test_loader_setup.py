@@ -1,3 +1,5 @@
+import hashlib
+import io
 import json
 from pathlib import Path
 import runpy
@@ -151,14 +153,71 @@ class SetupTests(unittest.TestCase):
 
     def test_failed_download_leaves_no_cached_package(self):
         class Response:
+            headers = {}
             def __enter__(self): return self
             def __exit__(self, *args): pass
             def read(self, size): raise OSError('network disconnected')
         with patch('urllib.request.urlopen', return_value=Response()):
-            with self.assertRaises(OSError):
-                setup.download(self.home, 'download.zip', 'https://example.com/test.zip', 'hash', lambda _: None)
+            with self.assertRaisesRegex(RuntimeError, 'network disconnected(.|\n)*https://example.com/test.zip'):
+                setup.download(self.home, 'download.zip', 'https://example.com/test.zip', 'hash', lambda _: None, [])
         self.assertFalse((self.home / 'download.zip').exists())
         self.assertFalse((self.home / 'download.download').exists())
+
+
+class DownloadTests(unittest.TestCase):
+    """A download that goes wrong is tried again and explained; a copy saved by a browser is used instead."""
+    GOOD = b'PK\x03\x04 the real package'
+
+    def setUp(self):
+        self.temp = tempfile.TemporaryDirectory()
+        self.addCleanup(self.temp.cleanup)
+        self.cache = Path(self.temp.name) / 'loader-cache'
+        self.cache.mkdir()
+        self.hash = hashlib.sha256(self.GOOD).hexdigest()
+
+    def responses(self, *bodies):
+        """urlopen answering with these bodies in turn: (data, Content-Length) each."""
+        answers = iter(bodies)
+        def urlopen(*args, **kwargs):
+            data, length = next(answers)
+            response = io.BytesIO(data)
+            response.headers = {'Content-Length': str(length)}
+            return response
+        return patch('urllib.request.urlopen', urlopen)
+
+    def get(self, folders=()):
+        return setup.download(self.cache, 'Package-1.0+abc.zip', 'https://example.com/p.zip', self.hash,
+                              lambda _: None, list(folders))
+
+    def test_cut_off_download_is_tried_again(self):
+        with self.responses((self.GOOD[:5], len(self.GOOD)), (self.GOOD, len(self.GOOD))):
+            self.assertEqual(self.get().read_bytes(), self.GOOD)
+
+    def test_explains_cut_off_and_blocked_downloads(self):
+        with self.responses(*[(self.GOOD[:5], len(self.GOOD))] * 3):
+            with self.assertRaisesRegex(RuntimeError, f'cut off \\(5 of {len(self.GOOD)} bytes\\)(.|\n)*https://example.com/p.zip'):
+                self.get()
+        with self.responses(*[(b'<html>Blocked</html>', 20)] * 3):
+            with self.assertRaisesRegex(RuntimeError, 'web page arrived'):
+                self.get()
+        with self.responses(*[(b'PK\x03\x04 another file', 17)] * 3):
+            with self.assertRaisesRegex(RuntimeError, 'different from the official one'):
+                self.get()
+        self.assertEqual(list(self.cache.iterdir()), [])
+
+    def test_uses_a_copy_saved_by_the_browser(self):
+        downloads = Path(self.temp.name) / 'Downloads'
+        downloads.mkdir()
+        (downloads / 'Package-1.0+abc.zip').write_bytes(b'PK wrong one')
+        (downloads / 'Package-1.0%2Babc (1).zip').write_bytes(self.GOOD)
+        with patch('urllib.request.urlopen', side_effect=AssertionError('no download needed')):
+            self.assertEqual(self.get([downloads]).read_bytes(), self.GOOD)
+            self.assertEqual(self.get().read_bytes(), self.GOOD)  # cached from now on
+
+    def test_damaged_cached_copy_is_downloaded_again(self):
+        (self.cache / 'Package-1.0+abc.zip').write_bytes(b'damaged')
+        with self.responses((self.GOOD, len(self.GOOD))):
+            self.assertEqual(self.get().read_bytes(), self.GOOD)
 
 
 class OneClickTests(unittest.TestCase):
