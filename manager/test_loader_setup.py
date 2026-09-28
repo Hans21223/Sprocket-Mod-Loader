@@ -94,6 +94,24 @@ class SetupTests(unittest.TestCase):
         with self.assertRaisesRegex(RuntimeError, 'Refusing'):
             self.game.remove('..')
 
+    def test_remove_all_leaves_an_unmodded_game(self):
+        game = Game(self.home, 'sprocket', self.root, 'Sprocket.exe')
+        (self.root / 'GameAssembly.dll').write_bytes(b'game')
+        (self.root / 'winhttp.dll').write_bytes(b'original')
+        self.game = game
+        self.install()  # the loader entry
+        mod = game.mods_dir / 'gameplay'
+        (mod / 'BepInEx/plugins').mkdir(parents=True)
+        (mod / 'BepInEx/plugins/Plugin.dll').write_bytes(b'mod')
+        game.enable(mod.name)
+        (self.root / 'BepInEx/interop').mkdir()  # generated on first launch; no mod owns it
+        (self.root / 'BepInEx/interop/Assembly-CSharp.dll').write_bytes(b'generated')
+        (self.root / 'changelog.txt').write_text('BepInEx 6.0.0-be.788 changes')
+        kept, gone = game.remove_all(setup.MOD)
+        self.assertEqual((kept, game.enabled, game.mods()), ([], {}, []))
+        self.assertEqual(sorted(p.name for p in self.root.iterdir()), ['GameAssembly.dll'])
+        self.assertIn(self.root / 'changelog.txt', gone)
+
     def test_mixed_mod_conflict_is_not_disabled(self):
         mod = self.game.mods_dir / 'mixed'
         mod.mkdir()
