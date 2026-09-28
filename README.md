@@ -20,6 +20,8 @@ The official BepInEx crashes or hangs on a black screen with this Sprocket versi
 
 Both methods install the same loader. Use only one of them, and don't mix a manager install with manually copied files.
 
+**On Linux or Steam Deck?** Mod Manager is Windows-only. Follow the [Linux and Steam Deck guide](docs/LINUX.md) instead: a few terminal commands and one Steam launch option.
+
 ## Easy install: Mod Manager
 
 ### What you need
