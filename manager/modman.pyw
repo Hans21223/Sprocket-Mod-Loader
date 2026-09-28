@@ -343,8 +343,10 @@ def inject(pid, dll):
 
 
 def pids(exe):
+    # Bytes, not text=True: on some Windows languages tasklist prints bytes the default codepage can't decode, and
+    # subprocess then silently returns None. The name, PID and digits needed here are all ASCII.
     out = subprocess.run(["tasklist", "/FO", "CSV", "/NH", "/FI", f"IMAGENAME eq {exe}"], capture_output=True,
-                         text=True, creationflags=subprocess.CREATE_NO_WINDOW).stdout
+                         creationflags=subprocess.CREATE_NO_WINDOW).stdout.decode("ascii", "replace")
     # an exited game can linger as a 48 K husk while Steam holds its handle; only count ones using real memory
     return [int(r[1]) for r in csv.reader(out.splitlines()) if len(r) > 4 and r[0].lower() == exe.lower()
             and int(re.sub(r"\D", "", r[4]) or 0) > 1024]
