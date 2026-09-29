@@ -27,7 +27,7 @@ Both methods install the same loader. Use only one of them, and don't mix a mana
 ### What you need
 
 1. **Python 3.9 or newer.** New to Python, or not sure you have it? Follow [Install Python](#install-python) below. It takes about five minutes.
-2. **The Mod Manager:** [download Sprocket-Mod-Manager-1.3.3.zip](https://github.com/Hans21223/Sprocket-Mod-Loader/releases/download/v1.3.3/Sprocket-Mod-Manager-1.3.3.zip).
+2. **The Mod Manager:** [download Sprocket-Mod-Manager-1.3.4.zip](https://github.com/Hans21223/Sprocket-Mod-Loader/releases/download/v1.3.4/Sprocket-Mod-Manager-1.3.4.zip).
 3. **Only for MelonLoader mods, the MLLoader ZIP.** Download **MLLoader IL2CPP BepInEx6 V0.7.3 / 2.3.9** from [Tong317's MLLoader page on Nexus Mods](https://www.nexusmods.com/ironnest/mods/26) and leave it in your Downloads folder as a ZIP. The manager finds it there. It can't download MLLoader for you, because Nexus Mods needs you to log in. Only need BepInEx mods? Skip this.
 
 Don't use GitHub's green **Code → Download ZIP** button or the "Source code" downloads. Those are for developers and can't be installed.
@@ -54,7 +54,7 @@ Then go back to Command Prompt and answer the rest with **y**, including install
 
 ### Install the loader
 
-1. **Put the `ModManager` folder somewhere it can stay.** Double-click `Sprocket-Mod-Manager-1.3.3.zip` to open it, then drag the `ModManager` folder out. The Sprocket game folder is a good place (in Steam, right-click **Sprocket** → **Manage** → **Browse local files**). Don't delete this folder later: it keeps the backups used to undo changes.
+1. **Put the `ModManager` folder somewhere it can stay.** Double-click `Sprocket-Mod-Manager-1.3.4.zip` to open it, then drag the `ModManager` folder out. The Sprocket game folder is a good place (in Steam, right-click **Sprocket** → **Manage** → **Browse local files**). Don't delete this folder later: it keeps the backups used to undo changes.
 2. **Close Sprocket** if it's running, then **double-click `modman.pyw`** in the `ModManager` folder. The manager finds Sprocket in your Steam library by itself and selects it in the box at the top.
 3. **Click Install mod loader.** That's the only click it needs. The manager downloads the official BepInEx and this patch, checks that they're the exact expected files, backs up anything it replaces, and installs. MLLoader is included if its ZIP is in your Downloads folder or on your Desktop.
 
@@ -137,7 +137,7 @@ The loader ZIP also contains **Prepare Loader.cmd**, an optional helper that dow
 | *Close Sprocket before installing the loader.* | Quit the game. If it looks closed, end `Sprocket.exe` in Task Manager, then try again. |
 | *Checksum failed: …* | The file isn't the exact version needed. For MLLoader, download **V0.7.3 / 2.3.9** again from Nexus. |
 | *… need MLLoader …* | You have MelonLoader mods, so the manager won't install without MLLoader. Put the MLLoader ZIP in your Downloads folder and click **Install mod loader** again. |
-| *module 'hashlib' has no attribute 'file_digest'* | You have Mod Manager 1.3.0. [Download 1.3.3](https://github.com/Hans21223/Sprocket-Mod-Loader/releases/download/v1.3.3/Sprocket-Mod-Manager-1.3.3.zip). |
+| *module 'hashlib' has no attribute 'file_digest'* | You have Mod Manager 1.3.0. [Download 1.3.4](https://github.com/Hans21223/Sprocket-Mod-Loader/releases/download/v1.3.4/Sprocket-Mod-Manager-1.3.4.zip). |
 | Double-clicking `modman.pyw` does nothing, or opens it as text | Python isn't installed, or Windows doesn't know to open `.pyw` files with it. Follow [Install Python](#install-python), then right-click `modman.pyw` → **Open with** → **Choose another app** → **Python**, tick **Always**. From 1.3.3, anything else that stops the manager opening shows a message saying what to do. |
 | Double-clicking `modman.pyw`, or typing `python`, opens the Microsoft Store | Windows' **App Installer** shortcut is in the way. Press the Windows key, type **manage app execution aliases**, press Enter. Turn **off** **App Installer** `python.exe` and `python3.exe`, turn **on** **Python (default)** and **Python (default windowed)**. See [Install Python](#install-python) step 3. |
 | A black window says *"Your app execution alias settings are configured to launch other commands besides 'py' and 'python'"* | That's the Python Install Manager's setup helper. Type **y**, press Enter, and follow [Install Python](#install-python) step 3. |
@@ -155,6 +155,7 @@ The loader ZIP also contains **Prepare Loader.cmd**, an optional helper that dow
 
 ## What's new
 
+- **1.3.4 (Mod Manager):** download recovery and clean unmodding. If an official download is cut off or blocked by a filter, setup retries and explains what happened, or automatically uses a browser download from your Downloads folder. Adds **Remove all mods** to cleanly remove all mods and loader files, restoring original game files.
 - **1.3.3 (Mod Manager):** never closes without a word. Opened inside the ZIP, or on a Python without Tkinter, it says so and what to do; any other error is shown and saved in `modman-error.log`.
 - **1.3.2 (Mod Manager):** one click installs everything. The manager finds Sprocket in any Steam library and the MLLoader ZIP in Downloads, so it no longer has to sit in the game folder or ask for files. MLLoader is optional: without it, BepInEx mods still work. **Mod report** says plainly when the loader is missing.
 - **1.3.1 (Mod Manager):** runs on Python 3.9 and newer. 1.3.0 stopped at startup on Python 3.10 and older.
