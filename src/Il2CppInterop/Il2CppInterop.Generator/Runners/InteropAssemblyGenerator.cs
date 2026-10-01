@@ -186,6 +186,11 @@ internal class InteropAssemblyGeneratorRunner : IRunner
             Logger.Instance.LogWarning("Not performing unstripping as unity libs are not specified");
         }
 
+        using (new TimingCookie("Restoring Unity UI convenience constructors"))
+        {
+            Pass82RestoreUnityUiConstructors.DoPass(rewriteContext);
+        }
+
         // Breaks .net runtime
         //using (new TimingCookie("Generating forwarded types"))
         //{

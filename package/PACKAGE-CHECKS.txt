@@ -1,4 +1,19 @@
-Package checks, 2026-09-24, version 1.2.0
+Package checks, 2026-10-02, version 1.2.1
+
+Adds Il2CppInterop.Generator.dll with the Unity RectOffset constructor restoration pass.
+Runtime, Common, HarmonySupport and TerraFX DLLs remain byte-identical to 1.2.0.
+Generator and cache-repair builds passed; 200 focused compatibility checks passed.
+Mod Manager: 28 loader setup and compatibility tests passed; modman.pyw --selftest passed.
+The setup tests cover the new generator being required and remaining authoritative over MLLoader's overlay.
+Prepare-Loader.ps1 prepared 229 files from the hash-verified official be.788 ZIP.
+All five prepared patch DLLs matched their expected SHA-256 hashes.
+Source ZIP and release ZIP are CRC checked by tools/package-release.py.
+The package contains no game binaries, generated game assemblies, mod DLLs or personal game data.
+Existing wrapper caches must be regenerated or repaired after upgrading; see UNITY-UI-COMPATIBILITY.md.
+No new game session was launched; native F1/keybinding menus still require user testing.
+No turret-spawn fix is claimed without a full log from that separate failure.
+
+Historical checks, 2026-09-24, version 1.2.0
 
 Prepared from the hash-verified official be.788 ZIP by the Python manager installer.
 All 229 prepared files match the official base plus the four bridge DLLs by SHA-256.

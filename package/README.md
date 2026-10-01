@@ -1,8 +1,12 @@
-# Sprocket Mod Loader compatibility pack 1.2.0
+# Sprocket Mod Loader compatibility pack 1.2.1
 
-An **unofficial Sprocket-specific patch for BepInEx 6 be.788**, updated 24 September 2026. It lets compatible BepInEx IL2CPP mods load on the tested Sprocket build. This is the loader/injector package, not the turret mod and not an official BepInEx release.
+An **unofficial Sprocket-specific patch for BepInEx 6 be.788**, updated 2 October 2026. It lets compatible BepInEx IL2CPP mods load on the tested Sprocket build. This is the loader/injector package, not the turret mod and not an official BepInEx release.
 
-## New in 1.2.0
+## New in 1.2.1
+
+Restores the missing Unity `RectOffset(left, right, top, bottom)` constructor in generated wrappers. This addresses the reported SprocketModAPI F1 menu and keybinding menu failure while preserving the original mod DLL. The patch adds `Il2CppInterop.Generator.dll` to the four existing compatibility libraries. Builds and 200 focused checks passed; opening the actual game menus remains to be tested. See [UNITY-UI-COMPATIBILITY.md](UNITY-UI-COMPATIBILITY.md) for the cause and upgrade instructions.
+
+## Included from 1.2.0
 
 Fixes by-reference IL2CPP struct conversion in the Harmony bridge. This repairs the Sprocket Tweaks crash when entering the editor and building wheels. See MELON-BYREF-CRASH.md. The separate Mod Manager download now offers an Install mod loader button for automatic setup.
 
@@ -31,6 +35,10 @@ A game update can break compatibility even if the displayed version looks simila
 
 Never launch with the unpatched official build between steps: Prepare Loader applies the compatibility files before you install anything.
 
+### Upgrading an existing installation
+
+Install the five patch libraries, then follow [the cache upgrade instructions](UNITY-UI-COMPATIBILITY.md#upgrading-an-existing-installation) before launching. An old generated cache can retain the missing constructor even after the generator is replaced. Back up and rename only the generated cache folders; preserve plugins, settings and Unity base libraries.
+
 ### Mod Manager installation
 
 If using the accompanying user's ModManager, import the prepared **Ready-to-copy folder** as one new mod named `BepInEx be.788 - Sprocket 6000.3.21 Patch`. Keep the original BepInEx and other loader entries disabled, then enable the new entry. **Do not import this outer sharing ZIP:** its patch and source folders are not an installable game layout. An existing entry with that name may already contain this patch; a duplicate is unnecessary.
@@ -55,6 +63,6 @@ See **WHY-THE-OLD-LOADER-FAILED.md** for the black-screen/crash explanation and 
 
 ## Share and source
 
-Share the original **Sprocket-Mod-Loader-1.2.0.zip**. Recipients prepare their own official base download. No personal saves, blueprints, game binaries, generated game assemblies, or gameplay plugins are included. Do not distribute your installed game folder or a populated BepInEx folder.
+Share the original **Sprocket-Mod-Loader-1.2.1.zip**. Recipients prepare their own official base download. No personal saves, blueprints, game binaries, generated game assemblies, or gameplay plugins are included. Do not distribute your installed game folder or a populated BepInEx folder.
 
 `Source/Il2CppInterop-patched-source.zip` contains the corresponding bridge source, build instructions and modification notices. The patched bridge is LGPL-3.0-only; TerraFX remains MIT. License texts and attribution are in Licenses and THIRD-PARTY-NOTICES.md. The preparation scripts use LGPL-3.0-only. BepInEx and its bundled dependencies are downloaded unchanged from the upstream host before the bridge overlay is applied locally; they retain their upstream licenses. This is an unofficial compatibility package with no upstream endorsement.

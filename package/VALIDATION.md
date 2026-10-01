@@ -18,6 +18,12 @@ Full campaigns, long-term stability, every third-party mod combination, standalo
 
 Package preparation checks are documented in PACKAGE-CHECKS.txt. They verify packaging and checksums, not a new game session.
 
+## 1.2.1 Unity UI constructor regression, 2 October 2026
+
+The supplied SprocketModAPI log identifies a missing four-integer `UnityEngine.RectOffset` constructor in the F1 and keybinding UI. Both installed generated wrapper caches were confirmed to omit that overload while retaining the native-backed empty constructor and all four padding setters. The new generator pass delegates to those existing members before writing the assemblies and native method maps; it adds no fictitious native method pointer.
+
+The generator and separate existing-cache repair tool build successfully. 200 focused checks passed across the generator and repair tool: constructor allocation and argument order, absent/native-member guards, idempotence, existing wrapper method preservation, and native method-token mapping. The previously released Runtime, Common, HarmonySupport and TerraFX DLLs remain byte-identical. Opening the native F1 and keybinding menus in a new game session was not performed. No turret-spawn repair is claimed: the supplied screenshot contains no matching first exception for that separate report.
+
 ## 1.2.0 by-reference struct regression, 24 September 2026
 
 The crash dump for editor entry with Sprocket Tweaks 1.1.0 identified an invalid string access through its by-reference WheelArrayBlueprint patch. With the corrected bridge, the editor loaded, wheel weights were reported, the air-tyre adjustment ran (166.5 to 8.3 kg), and original Hello Melon's cannon callback ran. See MELON-BYREF-CRASH.md for evidence and limits. The earlier shared-hook tests remain passing.

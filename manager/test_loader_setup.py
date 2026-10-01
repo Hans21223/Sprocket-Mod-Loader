@@ -232,10 +232,13 @@ class OneClickTests(unittest.TestCase):
         self.game = Game(self.home, 'test', self.root, 'Sprocket.exe')
         self.base = self.zip('base.zip', {'winhttp.dll': b'doorstop', 'doorstop_config.ini': b'config',
                                           'BepInEx/core/Il2CppInterop.HarmonySupport.dll': b'upstream'})
-        self.patch = self.zip('patch.zip', {'Sprocket-Mod-Loader-1.2.0/Patch/BepInEx/core/Il2CppInterop.HarmonySupport.dll':
-                                            b'patched'})
+        self.patch = self.zip('patch.zip', {'Sprocket-Mod-Loader-1.2.1/Patch/BepInEx/core/Il2CppInterop.HarmonySupport.dll':
+                                            b'patched',
+                                         'Sprocket-Mod-Loader-1.2.1/Patch/BepInEx/core/Il2CppInterop.Generator.dll':
+                                            b'ui-generator'})
         self.melon = self.zip('downloads/MLLoader IL2CPP BepInEx6 V0.7.3-26-2-3-9.zip', {
             'BepInEx/patchers/BepInEx.MelonLoader.Loader.Patcher.dll': b'patcher',
+            'BepInEx/core/Il2CppInterop.Generator.dll': b'older-generator',
             'MLLoader/MelonLoader/MelonLoader.dll': b'melon'})
         # Stand-in packages: no network, and any game folder counts as the supported build.
         for name, value in (('MELON_HASH', setup.digest(self.melon)), ('validate_game', lambda game, running: None),
@@ -276,6 +279,7 @@ class OneClickTests(unittest.TestCase):
         result = setup.install(self.game, self.home, None, lambda _: [])
         self.assertIn('MLLoader was left out', result)
         self.assertEqual((self.root / 'BepInEx/core/Il2CppInterop.HarmonySupport.dll').read_bytes(), b'patched')
+        self.assertEqual((self.root / 'BepInEx/core/Il2CppInterop.Generator.dll').read_bytes(), b'ui-generator')
         self.assertFalse((self.root / 'MLLoader').exists())
         self.assertFalse(setup.needs_melon(self.game))
         (self.home / 'loader-cache' / setup.MELON_CACHE).write_bytes(b'damaged copy')  # ignored, not an error
@@ -293,6 +297,18 @@ class OneClickTests(unittest.TestCase):
         with self.assertRaisesRegex(RuntimeError, 'need MLLoader'):
             setup.install(self.game, self.home, None, lambda _: [])
         self.assertEqual((self.root / 'MLLoader/MelonLoader/MelonLoader.dll').read_bytes(), b'melon')
+
+    def test_ui_generator_is_authoritative_after_mlloader_overlay(self):
+        setup.install(self.game, self.home, self.melon, lambda _: [])
+        self.assertEqual((self.root / 'BepInEx/core/Il2CppInterop.Generator.dll').read_bytes(), b'ui-generator')
+
+    def test_missing_ui_generator_fails_before_installing(self):
+        self.patch = self.zip('patch-missing-generator.zip', {
+            'Sprocket-Mod-Loader-1.2.1/Patch/BepInEx/core/Il2CppInterop.HarmonySupport.dll': b'patched'})
+        with self.assertRaisesRegex(RuntimeError, 'missing BepInEx/core/Il2CppInterop.Generator.dll'):
+            setup.install(self.game, self.home, None, lambda _: [])
+        self.assertEqual(list(self.root.iterdir()), [])
+        self.assertEqual(self.game.enabled, {})
 
 
 if __name__ == '__main__':

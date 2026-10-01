@@ -1,4 +1,4 @@
-# Sprocket compatibility pack 1.2.0, 2026-09-24. LGPL-3.0-only.
+# Sprocket compatibility pack 1.2.1, 2026-10-02. LGPL-3.0-only.
 # Prepares files beside this script. Does not install into or launch the game.
 [CmdletBinding()]
 param([string]$BaseZip)
@@ -12,6 +12,7 @@ $baseName = 'BepInEx-Unity.IL2CPP-win-x64-6.0.0-be.788+5b766a3.zip'
 $baseHash = 'F4CC496BD098A0DF4164B81E3737297707F13A47C2478DBA2F60EEFAB784817A'
 $download = 'https://builds.bepinex.dev/projects/bepinex_be/788/BepInEx-Unity.IL2CPP-win-x64-6.0.0-be.788%2B5b766a3.zip'
 $patchHashes = @{
+    'Il2CppInterop.Generator.dll' = 'A5549C757E91A0AC9ADF30ABCB7D2F12D37664A6B7D12EB2D5CFDCC0EE5AEF6A'
     'Il2CppInterop.Runtime.dll' = '95ADB947689BEE0CC62CD58C507A7E9ACF83D5503758676BEA6B3A47F5E4057D'
     'Il2CppInterop.Common.dll' = '038C846C8D37FBD27C776EC7054B6D22ED09DEFFCDF0C27F63ED511FC1AA4823'
     'Il2CppInterop.HarmonySupport.dll' = '6652B486C5B61855DECB6B40C78BFCA6A1110305DF55755EF5AEA26ACB4A6511'

@@ -25,24 +25,26 @@ Open a terminal (on Steam Deck, switch to Desktop Mode and open **Konsole**). Ch
 cd ~/.local/share/Steam/steamapps/common/Sprocket || exit
 [ -f Sprocket.exe ] || { echo "This is not the Sprocket folder"; exit 1; }
 curl -fL -o bepinex.zip 'https://builds.bepinex.dev/projects/bepinex_be/788/BepInEx-Unity.IL2CPP-win-x64-6.0.0-be.788%2B5b766a3.zip'
-curl -fL -o patch.zip 'https://github.com/Hans21223/Sprocket-Mod-Loader/releases/download/v1.2.0/Sprocket-Mod-Loader-1.2.0.zip'
+curl -fL -o patch.zip 'https://github.com/Hans21223/Sprocket-Mod-Loader/releases/download/v1.2.1/Sprocket-Mod-Loader-1.2.1.zip'
 sha256sum -c <<'SUMS' || exit
 f4cc496bd098a0df4164b81e3737297707f13a47c2478dba2f60eefab784817a  bepinex.zip
-4f4c01dd01ebfa388e80d93b51a669cb380d7f7ce5da2a2f13b2e952f9536262  patch.zip
+bdb120752a7e0cff436e6c4e85ed9b117eeb71da20e9842678213eec309ed547  patch.zip
 SUMS
 unzip -oq bepinex.zip
-unzip -oq patch.zip 'Sprocket-Mod-Loader-1.2.0/Patch/*' -d patch-tmp
-cp -r patch-tmp/Sprocket-Mod-Loader-1.2.0/Patch/BepInEx .
+unzip -oq patch.zip 'Sprocket-Mod-Loader-1.2.1/Patch/*' -d patch-tmp
+cp -r patch-tmp/Sprocket-Mod-Loader-1.2.1/Patch/BepInEx .
 rm -rf patch-tmp bepinex.zip patch.zip
 echo "Loader installed"
 ```
 
 What it does:
-- downloads official BepInEx be.788 and the Sprocket 1.2.0 patch;
+- downloads official BepInEx be.788 and the Sprocket 1.2.1 patch;
 - checks both files' SHA-256 (it stops if either doesn't match);
-- unpacks BepInEx into the game folder, then copies the patch's four DLLs over BepInEx's.
+- unpacks BepInEx into the game folder, then copies the patch's five DLLs over BepInEx's.
 
 Both `bepinex.zip: OK` and `patch.zip: OK` must appear before `Loader installed`.
+
+If upgrading an existing loader, close Sprocket and [back up and rename its generated cache folders](UNITY-UI-COMPATIBILITY.md#upgrading-an-existing-installation) before the next launch. Old wrapper caches may otherwise retain the missing F1 menu constructor.
 
 No `unzip` or `curl`? Install them with your package manager, for example `sudo apt install unzip curl` or `sudo pacman -S unzip curl`.
 

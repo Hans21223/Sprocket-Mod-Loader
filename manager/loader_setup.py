@@ -16,9 +16,9 @@ MOD = 'Sprocket mod loader - BepInEx + MLLoader'
 BASE_NAME = 'BepInEx-Unity.IL2CPP-win-x64-6.0.0-be.788+5b766a3.zip'
 BASE_HASH = 'f4cc496bd098a0df4164b81e3737297707f13a47c2478dba2f60eefab784817a'
 BASE_URL = 'https://builds.bepinex.dev/projects/bepinex_be/788/' + BASE_NAME.replace('+', '%2B')
-PATCH_NAME = 'Sprocket-Mod-Loader-1.2.0.zip'
-PATCH_HASH = '4f4c01dd01ebfa388e80d93b51a669cb380d7f7ce5da2a2f13b2e952f9536262'
-PATCH_URL = 'https://github.com/Hans21223/Sprocket-Mod-Loader/releases/download/v1.2.0/' + PATCH_NAME
+PATCH_NAME = 'Sprocket-Mod-Loader-1.2.1.zip'
+PATCH_HASH = 'bdb120752a7e0cff436e6c4e85ed9b117eeb71da20e9842678213eec309ed547'
+PATCH_URL = 'https://github.com/Hans21223/Sprocket-Mod-Loader/releases/download/v1.2.1/' + PATCH_NAME
 MELON_HASH = 'bdc630e635de656c47f2a011f5e700115e09b70c3b33ac512018ef728f39d9cd'
 MELON_PAGE = 'https://www.nexusmods.com/ironnest/mods/26'
 MELON_CACHE = 'MLLoader-2.3.9.zip'
@@ -230,12 +230,13 @@ def install(game, home, melon_zip, running, report=lambda message: None):
         prepared.mkdir()
         report('Preparing BepInEx, the Sprocket patch' + (' and MLLoader...' if melon else '...'))
         extract(base, prepared)
-        extract(patch, prepared, 'Sprocket-Mod-Loader-1.2.0/Patch/')
-        required = ['winhttp.dll', 'doorstop_config.ini', 'BepInEx/core/Il2CppInterop.HarmonySupport.dll']
+        extract(patch, prepared, 'Sprocket-Mod-Loader-1.2.1/Patch/')
+        required = ['winhttp.dll', 'doorstop_config.ini', 'BepInEx/core/Il2CppInterop.HarmonySupport.dll',
+                    'BepInEx/core/Il2CppInterop.Generator.dll']
         if melon:
             extract(cached_melon, prepared)
             # Keep patch libraries authoritative even if a future package contains a core folder.
-            extract(patch, prepared, 'Sprocket-Mod-Loader-1.2.0/Patch/')
+            extract(patch, prepared, 'Sprocket-Mod-Loader-1.2.1/Patch/')
             required += ['BepInEx/patchers/BepInEx.MelonLoader.Loader.Patcher.dll', 'MLLoader/MelonLoader/MelonLoader.dll']
         for relative in required:
             if not (prepared / relative).is_file():

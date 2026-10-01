@@ -9,9 +9,10 @@ This unofficial package changes Il2CppInterop, not the upstream BepInEx project 
 | Il2CppInterop.Runtime.dll (modified) | BepInEx/Il2CppInterop, source base 81a6f78c8b653e0da4a3420ac4cd00819e8b6292 | LGPL-3.0-only |
 | Il2CppInterop.HarmonySupport.dll (modified, shared hooks and 1.2.0 by-reference structs) | Same Il2CppInterop source base | LGPL-3.0-only |
 | Il2CppInterop.Common.dll (matching build) | Same Il2CppInterop source base | LGPL-3.0-only |
+| Il2CppInterop.Generator.dll (modified, 1.2.1 Unity UI constructor compatibility) | Same Il2CppInterop source base | LGPL-3.0-only |
 | TerraFX.Interop.Windows.dll 10.0.22621.2 (unmodified dependency) | TerraFX.Interop.Windows NuGet package; repository commit fadce5a41fa5e6f0282e80e96f033d0a2c130991 | MIT |
 
-Il2CppInterop authors: knah, BepInEx and other upstream contributors. Existing upstream notices are retained in the included source. Corresponding source for Runtime, Common and HarmonySupport, their project files and upstream build scripts are in Source/Il2CppInterop-patched-source.zip. Local changes dated 2026-09-23 and 2026-09-24 and reproduction instructions are listed in that archive's LOCAL-CHANGES.md. Replacement/rebuilding of these libraries is permitted under their licenses; the compatibility fingerprint guards unsupported game binaries, not user modifications to this library.
+Il2CppInterop authors: knah, BepInEx and other upstream contributors. Existing upstream notices are retained in the included source. Corresponding source for Runtime, Common, HarmonySupport and Generator, their project files and upstream build scripts are in Source/Il2CppInterop-patched-source.zip. Local changes dated 2026-09-23, 2026-09-24 and 2026-10-02 and reproduction instructions are listed in that archive's LOCAL-CHANGES.md. Replacement/rebuilding of these libraries is permitted under their licenses; the compatibility fingerprint guards unsupported game binaries, not user modifications to this library.
 
 TerraFX: Copyright (c) Tanner Gooding and Contributors. The complete MIT notice is included in Licenses/TerraFX-MIT.txt. Source: https://github.com/terrafx/terrafx.interop.windows/tree/fadce5a41fa5e6f0282e80e96f033d0a2c130991
 
