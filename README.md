@@ -5,7 +5,7 @@ Lets you use **BepInEx** and **MelonLoader** (through MLLoader) mods in **Sprock
 The official BepInEx crashes or hangs on a black screen with this Sprocket version. This is a patched version that works with it. It is only the loader: gameplay mods are downloaded separately.
 
 > [!IMPORTANT]
-> **Works only with Sprocket 0.2.55.5 (Unity 6000.3.21f1) on 64-bit Windows.** You don't need to check this yourself: the installer checks your game and changes nothing if the version doesn't match. After a Sprocket update, wait for a new version of this patch.
+> **Loader 1.2.2 supports exact Sprocket 0.2.55.5 and 0.2.56.0 native/metadata pairs (Unity 6000.3.21f1) on 64-bit Windows.** Its 0.2.56.0 profile was validated offline; gameplay testing remains pending. Use the accompanying Mod Manager 1.3.5, which verifies both game files and preserves backups across Steam updates.
 
 **Contents:** [Pick an install method](#pick-an-install-method) · [Easy install](#easy-install-mod-manager) · [Manual install](#manual-install-no-python) · [Check that it worked](#check-that-it-worked) · [Troubleshooting](#troubleshooting) · [What's new](#whats-new) · [Technical details](#technical-details)
 
@@ -27,7 +27,7 @@ Both methods install the same loader. Use only one of them, and don't mix a mana
 ### What you need
 
 1. **Python 3.9 or newer.** New to Python, or not sure you have it? Follow [Install Python](#install-python) below. It takes about five minutes.
-2. **The Mod Manager:** [download Sprocket-Mod-Manager-1.3.4.zip with the loader 1.2.1 installer](https://github.com/Hans21223/Sprocket-Mod-Loader/releases/download/v1.2.1/Sprocket-Mod-Manager-1.3.4.zip).
+2. **The Mod Manager:** [download Sprocket-Mod-Manager-1.3.5.zip with the loader 1.2.2 installer](https://github.com/Hans21223/Sprocket-Mod-Loader/releases/download/v1.2.2/Sprocket-Mod-Manager-1.3.5.zip).
 3. **Only for MelonLoader mods, the MLLoader ZIP.** Download **MLLoader IL2CPP BepInEx6 V0.7.3 / 2.3.9** from [Tong317's MLLoader page on Nexus Mods](https://www.nexusmods.com/ironnest/mods/26) and leave it in your Downloads folder as a ZIP. The manager finds it there. It can't download MLLoader for you, because Nexus Mods needs you to log in. Only need BepInEx mods? Skip this.
 
 Don't use GitHub's green **Code → Download ZIP** button or the "Source code" downloads. Those are for developers and can't be installed.
@@ -54,7 +54,7 @@ Then go back to Command Prompt and answer the rest with **y**, including install
 
 ### Install the loader
 
-1. **Put the `ModManager` folder somewhere it can stay.** Double-click `Sprocket-Mod-Manager-1.3.4.zip` to open it, then drag the `ModManager` folder out. The Sprocket game folder is a good place (in Steam, right-click **Sprocket** → **Manage** → **Browse local files**). Don't delete this folder later: it keeps the backups used to undo changes.
+1. **Put the `ModManager` folder somewhere it can stay.** Double-click `Sprocket-Mod-Manager-1.3.5.zip` to open it, then drag the `ModManager` folder out. The Sprocket game folder is a good place (in Steam, right-click **Sprocket** → **Manage** → **Browse local files**). Don't delete this folder later: it keeps the backups used to undo changes.
 2. **Close Sprocket** if it's running, then **double-click `modman.pyw`** in the `ModManager` folder. The manager finds Sprocket in your Steam library by itself and selects it in the box at the top.
 3. **Click Install mod loader.** That's the only click it needs. The manager downloads the official BepInEx and this patch, checks that they're the exact expected files, backs up anything it replaces, and installs. MLLoader is included if its ZIP is in your Downloads folder or on your Desktop.
 
@@ -95,7 +95,7 @@ This uses File Explorer only.
 2. **Back up any loader you already have.** If the game folder has any of `BepInEx`, `dotnet`, `winhttp.dll`, `doorstop_config.ini`, `.doorstop_version` or `changelog.txt`, copy them to a folder somewhere else first. If they came from a different loader, uninstall it using its own instructions.
 3. **Install the official BepInEx.** Download [BepInEx be.788 for Windows x64 IL2CPP](https://builds.bepinex.dev/projects/bepinex_be/788/BepInEx-Unity.IL2CPP-win-x64-6.0.0-be.788%2B5b766a3.zip). Extract everything inside it into the game folder, so that `winhttp.dll` and the `BepInEx` folder sit next to `Sprocket.exe`.
 4. **Optional, for MelonLoader mods:** download **MLLoader IL2CPP BepInEx6 V0.7.3 / 2.3.9** from [Nexus Mods](https://www.nexusmods.com/ironnest/mods/26) and extract its `BepInEx` and `MLLoader` folders into the game folder.
-5. **Add the patch last. Don't start the game before this step:** unpatched BepInEx fails on this Sprocket version. Download [Sprocket-Mod-Loader-1.2.1.zip](https://github.com/Hans21223/Sprocket-Mod-Loader/releases/download/v1.2.1/Sprocket-Mod-Loader-1.2.1.zip) and open it. Go into `Sprocket-Mod-Loader-1.2.1\Patch` and drag the `BepInEx` folder into the game folder. When Windows asks, choose **Replace the files in the destination** (5 files).
+5. **Add the patch last. Don't start the game before this step:** unpatched BepInEx fails on this Sprocket version. Download [Sprocket-Mod-Loader-1.2.2.zip](https://github.com/Hans21223/Sprocket-Mod-Loader/releases/download/v1.2.2/Sprocket-Mod-Loader-1.2.2.zip) and open it. Go into `Sprocket-Mod-Loader-1.2.2\Patch` and drag the `BepInEx` folder into the game folder. When Windows asks, choose **Replace the files in the destination** (5 files).
 
    If a loader was installed before, [back up and rename the generated cache folders](docs/UNITY-UI-COMPATIBILITY.md#upgrading-an-existing-installation) before relaunching.
 6. **Start Sprocket through Steam** as usual. The first start takes longer than usual.
@@ -105,7 +105,7 @@ Your game folder should now look like this:
 ```text
 Sprocket\
 ├── BepInEx\
-│   ├── core\         <- the patch replaced 4 files here
+│   ├── core\         <- the patch replaced 5 files here
 │   └── plugins\      <- BepInEx mods go here (create it if it isn't there)
 ├── dotnet\
 ├── MLLoader\         <- only if you did step 4
@@ -128,20 +128,21 @@ The loader ZIP also contains **Prepare Loader.cmd**, an optional helper that dow
 - In the game folder, open `BepInEx\LogOutput.log` in Notepad. It contains this line:
 
   ```text
-  Sprocket Unity 6000.3.21f1 compatibility profile: SHA-256 verified
+  Sprocket 0.2.56.0 / Unity 6000.3.21f1 compatibility profile: native and metadata SHA-256 verified
   ```
 
 ## Troubleshooting
 
 | What you see | What to do |
 | --- | --- |
-| *This Sprocket build is not supported by the patch. No files were installed.* | Nothing was changed. Your `GameAssembly.dll` isn't the one from Sprocket 0.2.55.5. In Steam, right-click **Sprocket** → **Properties**: under **Installed Files** click **Verify integrity of game files**, and under **Betas** choose **None**. Start the game once; the main menu shows the version in the bottom-right corner. If it says **0.2.55.5**, close it and click **Install mod loader** again. If it's a newer version, Steam updated Sprocket: wait for an updated patch, and don't try to get around the check. |
+| *This Sprocket build is not supported by the patch. No files were installed.* | Nothing was changed. Loader 1.2.2 requires the exact files from Sprocket **0.2.55.5** or **0.2.56.0**. In Steam, right-click **Sprocket** → **Properties**: under **Installed Files** click **Verify integrity of game files**. If you are using a newer game build, wait for an updated patch and keep the loader disabled. |
+| *The game contains files from different builds*, or an older backup cannot be restored | Close Sprocket and use Steam's **Verify integrity of game files**. The manager preserves the old backup and refuses to mix it with updated game files. After verification, **Check game files** can record the matching update as the new original. |
 | Sprocket doesn't start at all, or hangs on a black screen, even before installing anything | Leftovers from an earlier mod install, often the official BepInEx, which hangs on this Sprocket version. Verifying the game files in Steam doesn't remove them. In Steam, right-click **Sprocket** → **Manage** → **Browse local files**, and move these to your Desktop if they're there: `winhttp.dll`, `doorstop_config.ini`, `.doorstop_version`, `version.dll`, and the folders `BepInEx`, `MLLoader`, `MelonLoader`, `dotnet`. Then start Sprocket again. |
 | *Add a game first*, or *Select the Sprocket game folder containing Sprocket.exe.* | The manager couldn't find Sprocket by itself, for example because it isn't in a Steam library. Click **Add game**, choose the game folder, then choose `Sprocket.exe`. |
-| *Close Sprocket before installing the loader.* | Quit the game. If it looks closed, end `Sprocket.exe` in Task Manager, then try again. |
+| *Close Sprocket before installing the loader.* | Quit the game, then try again. Manager 1.3.5 ignores confirmed exited crash processes; a live process or one whose state cannot be confirmed still blocks installation. |
 | *Checksum failed: …* | The file isn't the exact version needed. For MLLoader, download **V0.7.3 / 2.3.9** again from Nexus. |
 | *… need MLLoader …* | You have MelonLoader mods, so the manager won't install without MLLoader. Put the MLLoader ZIP in your Downloads folder and click **Install mod loader** again. |
-| *module 'hashlib' has no attribute 'file_digest'* | You have Mod Manager 1.3.0. [Download 1.3.4](https://github.com/Hans21223/Sprocket-Mod-Loader/releases/download/v1.2.1/Sprocket-Mod-Manager-1.3.4.zip). |
+| *module 'hashlib' has no attribute 'file_digest'* | You have Mod Manager 1.3.0. [Download 1.3.5](https://github.com/Hans21223/Sprocket-Mod-Loader/releases/download/v1.2.2/Sprocket-Mod-Manager-1.3.5.zip). |
 | Double-clicking `modman.pyw` does nothing, or opens it as text | Python isn't installed, or Windows doesn't know to open `.pyw` files with it. Follow [Install Python](#install-python), then right-click `modman.pyw` → **Open with** → **Choose another app** → **Python**, tick **Always**. From 1.3.3, anything else that stops the manager opening shows a message saying what to do. |
 | Double-clicking `modman.pyw`, or typing `python`, opens the Microsoft Store | Windows' **App Installer** shortcut is in the way. Press the Windows key, type **manage app execution aliases**, press Enter. Turn **off** **App Installer** `python.exe` and `python3.exe`, turn **on** **Python (default)** and **Python (default windowed)**. See [Install Python](#install-python) step 3. |
 | A black window says *"Your app execution alias settings are configured to launch other commands besides 'py' and 'python'"* | That's the Python Install Manager's setup helper. Type **y**, press Enter, and follow [Install Python](#install-python) step 3. |
@@ -155,12 +156,13 @@ The loader ZIP also contains **Prepare Loader.cmd**, an optional helper that dow
 | **Mod report** says a mod *needs BepInEx.Core, BepInEx.Unity.IL2CPP, which isn't installed*, or says the mod loader isn't installed | The loader isn't installed in this game folder, or it's disabled. Close the game, click **Install mod loader**, start the game once, then click **Mod report** again. |
 | There's a `MelonLoader` folder in the game folder, or **Mod report** reads its log from `MelonLoader\Latest.log` | That's a separate MelonLoader. This setup doesn't use it and hasn't been tested with it. Uninstall it with the MelonLoader installer, install this loader, then add your MelonLoader mods again with **Add mod**. |
 | A mod is on but doesn't do anything, or shows errors | In the Mod Manager, click **Mod report**. It lists what the mod needs that this Sprocket version doesn't have, and which mod each error in the last game session came from. Only the mod's author can fix these. |
-| F1 or the keybinding menu fails with a missing `RectOffset` constructor | Install loader 1.2.1 and [regenerate the old wrapper caches](docs/UNITY-UI-COMPATIBILITY.md#upgrading-an-existing-installation). Keep the original SprocketModAPI DLL. |
-| The game crashes when you quit | A known problem in this preview version that hasn't been fixed yet. |
+| F1 or the keybinding menu fails with a missing `RectOffset` constructor | Install loader 1.2.2 and [regenerate the old wrapper caches](docs/UNITY-UI-COMPATIBILITY.md#upgrading-an-existing-installation). Keep the original SprocketModAPI DLL. |
+| The game crashes when you quit | A previously documented shutdown problem that hasn't been fixed yet. |
 
 ## What's new
 
-- **1.2.1 (loader, current):** restores the missing Unity constructor used by SprocketModAPI's F1 and keybinding menus. Original mod DLLs are unchanged. Builds and 200 focused checks passed; native menu testing remains pending. [Cause and upgrade instructions](docs/UNITY-UI-COMPATIBILITY.md). The accompanying Mod Manager 1.3.4 ZIP now installs loader 1.2.1.
+- **1.2.2 (loader, current) and 1.3.5 (Mod Manager):** adds separately validated Sprocket 0.2.56.0 native/metadata support while retaining 0.2.55.5. Prevents old game-code backups from being restored across Steam updates, fixes duplicate mod DLL restoration when disabling, and ignores confirmed exited crash processes. Native checks, 111 shared-hook checks and 66 manager tests passed; new-game gameplay testing remains pending.
+- **1.2.1 (loader):** restores the missing Unity constructor used by SprocketModAPI's F1 and keybinding menus. Original mod DLLs are unchanged. Builds and 200 focused checks passed; native menu testing remains pending. [Cause and upgrade instructions](docs/UNITY-UI-COMPATIBILITY.md).
 - **1.3.4 (Mod Manager):** download recovery and clean unmodding. If an official download is cut off or blocked by a filter, setup retries and explains what happened, or automatically uses a browser download from your Downloads folder. Adds **Remove all mods** to cleanly remove all mods and loader files, restoring original game files.
 - **1.3.3 (Mod Manager):** never closes without a word. Opened inside the ZIP, or on a Python without Tkinter, it says so and what to do; any other error is shown and saved in `modman-error.log`.
 - **1.3.2 (Mod Manager):** one click installs everything. The manager finds Sprocket in any Steam library and the MLLoader ZIP in Downloads, so it no longer has to sit in the game folder or ask for files. MLLoader is optional: without it, BepInEx mods still work. **Mod report** says plainly when the loader is missing.
@@ -169,7 +171,7 @@ The loader ZIP also contains **Prepare Loader.cmd**, an optional helper that dow
 - **1.2.0 (loader):** fixes the crash when entering the editor with Sprocket Tweaks. Adds one-click setup to the Mod Manager. [Cause and validation](docs/MELON-BYREF-CRASH.md).
 - **1.1.0 (loader):** MelonLoader (MLLoader) mods and BepInEx mods can patch the same game code without crashing, for example Hello Melon with Sprocket QoL. [Cause, fix and validation](docs/MELON-HOOK-CRASH.md).
 
-**Known issue (preview):** a separate crash can happen when the game shuts down. The editor fix was tested, but crash-free gameplay and shutdown are not guaranteed.
+**Known issue:** a separate crash can happen when the game shuts down. The earlier editor fix was tested, but crash-free gameplay and shutdown are not guaranteed.
 
 All releases: [GitHub Releases](https://github.com/Hans21223/Sprocket-Mod-Loader/releases).
 
@@ -185,13 +187,14 @@ Earlier tests hung on a black screen during menu loading, including with BepInEx
 
 BepInEx starts its .NET loader through Doorstop. Il2CppInterop connects managed mods to Sprocket's native IL2CPP game code. This package includes the runtime with three verified native targets, its matching Common library and TerraFX dependency, the shared Harmony bridge, and the generator's Unity UI constructor repair. It does not patch Sprocket.exe, GameAssembly.dll or third-party mod DLLs on disk.
 
-The bridge checks the GameAssembly.dll SHA-256 and function starting bytes before using the game-specific targets:
+The bridge checks the matching GameAssembly.dll and metadata SHA-256 values and function starting bytes before using the game-specific targets:
 
 ```text
 18A9A15B5E5F11898ED4DC34FC3E2D4C12950C3B37AC1FA499E8B00592DEDD56
+ADB36B5F04662BE0D40C6E548C797394659A9C0D4B009E3C0E718833ABF90B3A
 ```
 
-**Other game builds are unsupported.** A Sprocket update requires revalidation, not just changing this hash. This is not a universal Unity 6 fix, and only the documented MLLoader test combination has been verified. Standalone MelonLoader is not covered.
+These are the native fingerprints for 0.2.55.5 and 0.2.56.0 respectively; the required metadata fingerprints are in [the package README](package/README.md). The new native functions were traced through their exported callers and compared with the previous function bodies. **Other game builds are unsupported.** Future updates require revalidation. The recorded gameplay evidence covers the earlier build; 0.2.56.0 gameplay remains pending.
 
 ### Verification
 

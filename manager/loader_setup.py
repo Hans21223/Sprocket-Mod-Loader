@@ -10,15 +10,18 @@ import shutil
 import tempfile
 import urllib.request
 import zipfile
+import game_guard
 
 GAME_HASH = '18a9a15b5e5f11898ed4dc34fc3e2d4c12950c3b37ac1fa499e8b00592dedd56'
+METADATA_HASH = game_guard.METADATA_HASH.lower()
 MOD = 'Sprocket mod loader - BepInEx + MLLoader'
 BASE_NAME = 'BepInEx-Unity.IL2CPP-win-x64-6.0.0-be.788+5b766a3.zip'
 BASE_HASH = 'f4cc496bd098a0df4164b81e3737297707f13a47c2478dba2f60eefab784817a'
 BASE_URL = 'https://builds.bepinex.dev/projects/bepinex_be/788/' + BASE_NAME.replace('+', '%2B')
-PATCH_NAME = 'Sprocket-Mod-Loader-1.2.1.zip'
-PATCH_HASH = 'bdb120752a7e0cff436e6c4e85ed9b117eeb71da20e9842678213eec309ed547'
-PATCH_URL = 'https://github.com/Hans21223/Sprocket-Mod-Loader/releases/download/v1.2.1/' + PATCH_NAME
+PATCH_NAME = 'Sprocket-Mod-Loader-1.2.2.zip'
+PATCH_HASH = 'c1eed21905511ec32ba2042c2c99c10a18f44850f9edac853b07483faad13055'
+PATCH_URL = 'https://github.com/Hans21223/Sprocket-Mod-Loader/releases/download/v1.2.2/' + PATCH_NAME
+PATCH_PUBLISHED = True  # Public v1.2.2 release; still verifies the exact package checksum before use.
 MELON_HASH = 'bdc630e635de656c47f2a011f5e700115e09b70c3b33ac512018ef728f39d9cd'
 MELON_PAGE = 'https://www.nexusmods.com/ironnest/mods/26'
 MELON_CACHE = 'MLLoader-2.3.9.zip'
@@ -78,6 +81,10 @@ def download(cache, name, url, expected, report, folders=None, tries=3):
         shutil.copyfile(found, target)
         verify(target, expected)
         return target
+    if name == PATCH_NAME and not PATCH_PUBLISHED:
+        raise RuntimeError(f'The updated loader package {name} is prepared locally and has not been published yet. '
+                           'Use the checksum-verified local package in the manager loader-cache or Downloads folder. '
+                           'No loader files were installed.')
     temporary = target.with_suffix('.download')
     problem = 'it could not be downloaded'
     try:
@@ -136,8 +143,9 @@ def validate_game(game, running):
         raise RuntimeError('Select the Sprocket game folder containing Sprocket.exe.')
     if running('Sprocket.exe'):
         raise RuntimeError('Close Sprocket before installing the loader.')
-    if digest(game.root / 'GameAssembly.dll') != GAME_HASH:
+    if digest(game.root / 'GameAssembly.dll').upper() not in game_guard.supported_pairs():
         raise RuntimeError('This Sprocket build is not supported by the patch. No files were installed.')
+    game_guard.require_supported_pair(game.root)
 
 
 def steam_libraries(steam_folders=None):
@@ -211,6 +219,10 @@ def install(game, home, melon_zip, running, report=lambda message: None):
     """Install BepInEx be.788, the Sprocket patch and, when its ZIP is given or cached, MLLoader."""
     home = Path(home)
     validate_game(game, running)
+    if (digest(game.root / 'GameAssembly.dll').upper() == game_guard.UPDATED_GAME_HASH and
+            PATCH_NAME != 'Sprocket-Mod-Loader-1.2.2.zip'):
+        raise RuntimeError('Sprocket 0.2.56.0 requires the updated loader 1.2.2 package. '
+                           'The previous loader cannot be installed into this build. No files were installed.')
     cache = home / 'loader-cache'
     cache.mkdir(parents=True, exist_ok=True)
     cached_melon = cache / MELON_CACHE
@@ -223,20 +235,21 @@ def install(game, home, melon_zip, running, report=lambda message: None):
         if melon.resolve() != cached_melon.resolve():
             shutil.copyfile(melon, cached_melon)
             verify(cached_melon, MELON_HASH)
-    base = download(cache, BASE_NAME, BASE_URL, BASE_HASH, report)
     patch = download(cache, PATCH_NAME, PATCH_URL, PATCH_HASH, report)
+    base = download(cache, BASE_NAME, BASE_URL, BASE_HASH, report)
     with tempfile.TemporaryDirectory(prefix='loader-prepare-', dir=cache) as tmp:
         prepared = Path(tmp) / 'prepared'
         prepared.mkdir()
         report('Preparing BepInEx, the Sprocket patch' + (' and MLLoader...' if melon else '...'))
         extract(base, prepared)
-        extract(patch, prepared, 'Sprocket-Mod-Loader-1.2.1/Patch/')
+        patch_prefix = PATCH_NAME.removesuffix('.zip') + '/Patch/'
+        extract(patch, prepared, patch_prefix)
         required = ['winhttp.dll', 'doorstop_config.ini', 'BepInEx/core/Il2CppInterop.HarmonySupport.dll',
                     'BepInEx/core/Il2CppInterop.Generator.dll']
         if melon:
             extract(cached_melon, prepared)
             # Keep patch libraries authoritative even if a future package contains a core folder.
-            extract(patch, prepared, 'Sprocket-Mod-Loader-1.2.1/Patch/')
+            extract(patch, prepared, patch_prefix)
             required += ['BepInEx/patchers/BepInEx.MelonLoader.Loader.Patcher.dll', 'MLLoader/MelonLoader/MelonLoader.dll']
         for relative in required:
             if not (prepared / relative).is_file():

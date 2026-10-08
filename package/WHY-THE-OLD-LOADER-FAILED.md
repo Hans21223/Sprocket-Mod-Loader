@@ -1,5 +1,7 @@
 # Why original BepInEx showed a black screen or crashed
 
+The addresses and runtime evidence below describe the original repair for **Sprocket 0.2.55.5**. Loader 1.2.2 also includes a separately traced **0.2.56.0** profile with different addresses; see [VALIDATION.md](VALIDATION.md). Both profiles require their exact native DLL and metadata hashes.
+
 The loader reached Sprocket, but its Il2CppInterop bridge made assumptions that did not match Sprocket's Unity 6000.3.21f1 native code. Reinstalling the same loader or removing MLLoader did not correct those assumptions.
 
 ## The confirmed crash

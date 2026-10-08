@@ -5,9 +5,11 @@ import py_compile
 import zipfile
 
 root = Path(__file__).resolve().parents[1]
-out = root / 'releases' / 'Sprocket-Mod-Manager-1.3.4.zip'
+out = root / 'releases' / 'Sprocket-Mod-Manager-1.3.5.zip'
 out.parent.mkdir(exist_ok=True)
-names = ('modman.pyw', 'loader_setup.py', 'mod_compat.py', 'test_loader_setup.py', 'test_mod_compat.py', 'README.md')
+names = ('modman.pyw', 'loader_setup.py', 'mod_compat.py', 'game_guard.py',
+         'test_loader_setup.py', 'test_mod_compat.py', 'test_game_guard.py', 'test_disable.py',
+         'test_process_state.py', 'README.md')
 for name in names:
     if name.endswith(('.py', '.pyw')):
         py_compile.compile(str(root / 'manager' / name), doraise=True)

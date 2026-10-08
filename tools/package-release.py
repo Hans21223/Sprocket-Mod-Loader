@@ -5,7 +5,7 @@ import zipfile
 
 ROOT = Path(__file__).resolve().parents[1]
 PACKAGE = ROOT / 'package'
-VERSION = '1.2.1'
+VERSION = '1.2.2'
 PATCH_DLLS = {
     'Il2CppInterop.Runtime.dll', 'Il2CppInterop.Common.dll',
     'Il2CppInterop.HarmonySupport.dll', 'Il2CppInterop.Generator.dll',

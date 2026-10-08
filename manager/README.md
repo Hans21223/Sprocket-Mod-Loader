@@ -8,9 +8,9 @@ For MelonLoader mods, also download the **MLLoader IL2CPP BepInEx6 V0.7.3 / 2.3.
 
 1. **Put this `ModManager` folder somewhere it can stay.** The Sprocket game folder is a good place (in Steam, right-click **Sprocket** → **Manage** → **Browse local files**). It keeps the backups used to undo changes, so don't delete it later.
 
-   **Upgrading?** Copy `modman.pyw`, `loader_setup.py` and `mod_compat.py` over the ones in your existing manager folder. Keep your games.json, mods, state and backup folders.
+   **Upgrading?** Copy `modman.pyw`, `loader_setup.py`, `mod_compat.py` and `game_guard.py` over the ones in your existing manager folder. Keep your games.json, mods, state and backup folders.
 2. **Close Sprocket**, then double-click `modman.pyw`. The manager finds Sprocket next to its folder or in any Steam library and selects it at the top. If it doesn't, click **Add game**, choose the game folder, then choose `Sprocket.exe`.
-3. **Click Install mod loader.** Setup downloads official BepInEx be.788 and the Sprocket 1.2.1 patch, checks their exact SHA-256 hashes, backs up the files it replaces, installs everything, and turns on one combined entry: `Sprocket mod loader - BepInEx + MLLoader`. MLLoader is included when its ZIP is in Downloads, on the Desktop, or in or next to this folder. The manager keeps a checked copy for later installs. If a download fails (a weak connection, antivirus or network filtering), the message links the file: download it in your browser, leave it in Downloads, and click **Install mod loader** again.
+3. **Click Install mod loader.** Setup downloads official BepInEx be.788 and the checksum-verified Sprocket loader 1.2.2 patch, backs up the files it replaces, installs everything, and turns on one combined entry: `Sprocket mod loader - BepInEx + MLLoader`. MLLoader is included when its ZIP is in Downloads, on the Desktop, or in or next to this folder. The manager keeps checked copies for later installs, and can also use matching ZIPs downloaded in your browser.
 
    Without the ZIP it asks: **Yes** to choose it, **No** to install without MLLoader for now (click **Install mod loader** again later to add it). It won't leave MLLoader out once MelonLoader mods use it.
 4. **Wait for "Installed and verified … loader files"** at the bottom.
@@ -51,12 +51,18 @@ Use the normal **Enable / Disable** button on the combined loader entry to disab
 
 Installation failures restore files and manager state. A snapshot of every affected file is retained under `loader-history/before-setup-*` after success. `journal.json` maps original paths to numbered copies under `files`. Do not share that folder: it may contain your local configuration and paths. If an interrupted installation leaves `loader-recovery`, setup refuses to overwrite it; preserve the journal and copies for recovery.
 
-The installer supports only Sprocket 0.2.55.5 / Unity 6000.3.21f1 with the verified GameAssembly hash. It refuses an unsupported or running game. A Steam update needs a newly validated patch.
+The installer accepts the separately traced Sprocket 0.2.55.5 and 0.2.56.0 / Unity 6000.3.21f1 native and metadata pairs. It refuses an unsupported or running game. Future Steam updates need a newly validated patch. The 0.2.56.0 native targets were checked offline; gameplay testing remains pending.
+
+The installer also checks the matching game metadata. An older GameAssembly with updated metadata is a mixed installation and must be repaired with Steam's **Verify integrity of game files**. Game-file backups now record the Steam build and metadata; the manager will not restore an older native DLL after an update. After verifying a fresh update, **Check game files** can record the new original while preserving the previous backup. This does not make a new game build compatible with the loader patch.
 
 ## What changed
 
+Loader 1.2.2 and manager 1.3.5 support the separately checked 0.2.56.0 game files, block restoring older native backups after Steam updates, and ignore confirmed exited crash processes when checking whether the game is open. Live and uncertain processes still block installation. All 66 manager tests passed; gameplay testing remains pending.
+
+Disabling a manually preinstalled mod now preserves its duplicate backup outside the game instead of restoring an identical active DLL. If a mod DLL was changed outside the manager, it stays tracked and the manager explains why disabling could not finish. Edited saves and other user data remain preserved.
+
 The 1.2.1 loader includes the earlier shared-hook and by-reference struct fixes plus the missing Unity constructor used by SprocketModAPI's F1 and keybinding menus. If upgrading an existing installation, close the game and [back up and rename the generated cache folders](https://github.com/Hans21223/Sprocket-Mod-Loader/blob/main/docs/UNITY-UI-COMPATIBILITY.md#upgrading-an-existing-installation) after installing, then relaunch to regenerate them. Original third-party mod DLLs are unchanged; native menu testing remains pending.
 
-This is a preview: a separate crash during shutdown remains unresolved. Installation and repeat verification of all 316 package files passed on both the Steam and test copies; nine installer regression tests and the manager self-test passed.
+The previously documented crash during shutdown remains unresolved. Installation and repeat verification of all 316 package files passed on both the Steam and test copies; manager fixtures and the self-test passed. These file checks do not establish gameplay compatibility for every mod.
 
 The manager package contains source only, under the repository's LGPL-3.0 license; no game files, user configuration, saves, gameplay mods or cached downloads. Run `python modman.pyw --selftest`, `python -m unittest -v test_loader_setup` and `python -m unittest -v test_mod_compat` from this folder for local checks.

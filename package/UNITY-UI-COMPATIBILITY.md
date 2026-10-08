@@ -6,8 +6,8 @@ The patched generator restores the overload by calling the existing native-backe
 
 ## Upgrading an existing installation
 
-1. Save your work and close Sprocket. Install loader 1.2.1 using Mod Manager or the manual instructions, replacing all five patch DLLs.
-2. In the game folder, rename `BepInEx/interop` to an unused backup name, such as `interop.before-1.2.1`. If present, also rename `MLLoader/MelonLoader/Il2CppAssemblies` to an unused backup name, such as `Il2CppAssemblies.before-1.2.1`. Keep both backups until the menus work. These folders contain generated wrappers, not tank saves. Preserve `plugins`, `Mods`, `config`, `unity-libs` and the other loader files.
+1. Save your work and close Sprocket. Install loader 1.2.2 using Mod Manager or the manual instructions, replacing all five patch DLLs. It includes this constructor fix and the separately traced Sprocket 0.2.56.0 profile.
+2. In the game folder, rename `BepInEx/interop` to an unused backup name, such as `interop.before-1.2.2`. If present, also rename `MLLoader/MelonLoader/Il2CppAssemblies` to an unused backup name, such as `Il2CppAssemblies.before-1.2.2`. Keep both backups until the menus work. These folders contain generated wrappers, not tank saves. Preserve `plugins`, `Mods`, `config`, `unity-libs` and the other loader files.
 3. Launch normally. The loader will regenerate the missing wrapper caches; this start takes longer than usual. Check `BepInEx/LogOutput.log`, then test F1 and the keybinding menu. Restarting is required because the old failed menu controller cannot recover within the same session.
 
 The official be.788 cache check uses the generator's assembly version rather than its file hash. The patch retains the compatible assembly version, so merely replacing the generator does not reliably invalidate an existing cache.

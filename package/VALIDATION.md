@@ -1,5 +1,15 @@
 # Validation and limitations
 
+## 1.2.2 Sprocket 0.2.56.0 profile, 8 October 2026
+
+The new profile was validated offline against Steam build 25808118, depot 1674171 manifest 3052560297148110237. GameAssembly size and SHA-1 match the Steam manifest. The native and metadata SHA-256 values are documented in README.md; both must match before the runtime uses any game-specific target.
+
+Class::Init is at RVA 0x4E46B0, Field::GetDefaultFieldValue at 0x494B30, and GenericMethod::GetMethod at 0x4CFCD0. Three PE unwind boundaries and prologues, seven call edges, the one-argument generic ABI, class flag offset 0x135 and field output argument were validated. All seven hook/caller/helper function bodies match 0.2.55.5 after relocations. The field lookup template helper moved 0x560 while the other engine functions moved 0x550; its own 78 instructions also match. The prior one-argument generic hook and IL2CPP layout assumptions are retained.
+
+Runtime/Common/HarmonySupport build completed with zero errors and 184 existing warnings. Shared native-hook tests passed 111 checks. Manager fixtures cover native/metadata pairing, Steam build changes, legacy guards, same-build restores, native mod enable/disable, and preserving previous originals. No game was launched for these checks. Startup, editor operation, mod combinations and gameplay on 0.2.56.0 remain for user playtesting.
+
+The manager prevents restoring an older native backup across a Steam update. If game files from different builds are present, it requests Steam verification and leaves both current game files and backups intact. New native code from future versions remains unsupported.
+
 Runtime evidence was collected on 23 September 2026 using Sprocket 0.2.55.5 / Unity 6000.3.21f1 with the exact GameAssembly fingerprint in README.md.
 
 ## Recorded runtime checks

@@ -21,6 +21,7 @@ from ctypes import wintypes as wt
 from fnmatch import fnmatch
 from pathlib import Path
 from urllib.parse import unquote
+import game_guard
 
 HOME = Path(__file__).resolve().parent
 INJECT_DIR = "_inject"
@@ -62,6 +63,24 @@ def sha256(path):
         for chunk in iter(lambda: f.read(1 << 20), b""):
             h.update(chunk)
     return h.hexdigest().upper()
+
+
+def loader_dll(rel):
+    """DLLs loaded from mod folders, where keeping an edited file would leave a mod running."""
+    path = rel.replace("\\", "/").lower()
+    return path.endswith(".dll") and path.startswith((
+        "bepinex/plugins/", "bepinex/patchers/", "mlloader/mods/", "mlloader/plugins/",
+        "mlloader/userlibs/", "mods/", "plugins/", "userlibs/"))
+
+
+def archive_disabled_copy(backup):
+    """Keep a duplicate pre-manager mod outside the game without restoring it as an active DLL."""
+    destination = backup.with_name(backup.name + ".disabled-copy")
+    number = 1
+    while destination.exists():
+        destination = backup.with_name(backup.name + f".disabled-copy.{number}")
+        number += 1
+    os.replace(backup, destination)
 
 
 class Game:
@@ -133,6 +152,9 @@ class Game:
         clash = sorted({owners[d.lower()] for d in files.values() if d.lower() in owners and d.lower() not in shared})
         if clash:
             raise RuntimeError(f"'{mod}' overwrites files of enabled mod(s): {', '.join(clash)}")
+        for rel in files.values():
+            if self.protected_file(rel) and self.target(rel).is_file():
+                self.require_game_context(rel)
         done = self.enabled[mod] = {}
         try:
             for src, rel in files.items():
@@ -143,6 +165,10 @@ class Game:
                 if rel not in done and dst.exists() and not bak.exists():
                     bak.parent.mkdir(parents=True, exist_ok=True)
                     shutil.copy2(dst, bak)
+                    if self.protected_file(rel):
+                        path, contexts = self._backup_context()
+                        contexts[rel] = game_guard.context(self.root, rel)
+                        save(path, contexts)
                 done[rel] = None  # recorded before the copy, so a half-done copy still gets rolled back
                 dst.parent.mkdir(parents=True, exist_ok=True)
                 shutil.copy2(self.mods_dir / mod / src, dst)
@@ -154,27 +180,59 @@ class Game:
         return done
 
     def disable(self, mod):
-        """Undo a mod. Files changed since install (e.g. a tank re-saved in game) are kept; returns those."""
-        files, kept = self.enabled.get(mod, {}), []
+        """Undo a mod, preserving edited user data. Unknown edited DLLs stay tracked until resolved."""
+        files, kept, blocked = self.enabled.get(mod, {}), [], []
         others = {d.lower() for m, fs in self.enabled.items() if m != mod for d in fs}
+        sources = None
+
+        def matches_source(rel, path):
+            nonlocal sources
+            if not path.is_file():
+                return False
+            if sources is None:
+                sources = {}
+                for src, dst in self.files(mod).items():
+                    sources.setdefault(dst.lower(), []).append(self.mods_dir / mod / src)
+            return any(src.is_file() and filecmp.cmp(src, path, shallow=False)
+                       for src in sources.get(rel.lower(), []))
+
         try:
             for rel, installed in reversed(list(files.items())):  # one at a time, so a failure leaves an accurate record
                 dst, bak = self.target(rel), self.backup / rel
                 if rel.lower() in others:
                     pass  # another enabled mod still uses this file; the last one out restores it
-                elif installed and dst.exists() and stamp(dst) != installed:
+                elif installed and dst.exists() and stamp(dst) != installed and not (
+                        loader_dll(rel) and matches_source(rel, dst)):
+                    if loader_dll(rel):
+                        blocked.append(rel)
+                        continue  # do not say disabled while this DLL will still load next launch
                     kept.append(rel)
                     if bak.exists():
                         os.replace(bak, bak.with_name(bak.name + ".kept"))
+                elif loader_dll(rel) and bak.exists() and matches_source(rel, bak):
+                    # A mod manually installed before being added to the manager is its own "original".
+                    # Restoring that identical plugin makes Disable ineffective. Preserve the copy in backup.
+                    archive_disabled_copy(bak)
+                    dst.unlink(missing_ok=True)
                 elif bak.exists():
+                    if self.protected_file(rel):
+                        self.require_game_context(rel, bak)
                     restore_file(bak, dst)
                 else:
                     dst.unlink(missing_ok=True)
                 del files[rel]
+        except PermissionError as e:
+            raise RuntimeError(f"Could not disable {mod}: {rel} is in use or cannot be changed. "
+                               "Close the game, then try Disable again. Remaining files are still tracked.") from e
         finally:
             if not files:
                 self.enabled.pop(mod, None)
             save(self.state, self.enabled)
+        if blocked:
+            raise RuntimeError(f"{mod} is not fully disabled. These DLLs changed outside the manager and were "
+                               "preserved in the game, still tracked:\n" + "\n".join(blocked) +
+                               "\nAdd the matching mod version to the manager or move these DLLs outside the game, "
+                               "then try Disable again.")
         return kept
 
     def remove(self, mod):
@@ -228,18 +286,63 @@ class Game:
         path = self.state.with_name(f"{self.name}.guard.json")
         return path, load(path, {})  # file -> sha256 of its original
 
+    def _guard_context(self):
+        path = self.state.with_name(f"{self.name}.guard-context.json")
+        return path, load(path, {})
+
+    def _backup_context(self):
+        path = self.backup / '.game-context.json'
+        return path, load(path, {})
+
+    def protected_file(self, rel):
+        return rel.lower() in {p.lower() for p in self.protect} or (
+            rel.replace('\\', '/').lower() == game_guard.NATIVE.lower() and
+            (Path(self.exe).name.lower() == 'sprocket.exe' or (self.root / game_guard.METADATA).is_file()))
+
+    def game_context_problem(self, rel, original=None):
+        target = self.target(rel)
+        if original is not None:
+            _, contexts = self._backup_context()
+            native_hash = sha256(original)
+            saved = contexts.get(rel) or game_guard.original_context(self.root, rel, native_hash)
+        else:
+            _, guard = self._guard()
+            _, contexts = self._guard_context()
+            native_hash = guard.get(rel) or (sha256(target) if target.is_file() else '')
+            saved = contexts.get(rel) or game_guard.original_context(self.root, rel, native_hash)
+        current_hash = sha256(target) if target.is_file() else native_hash
+        # A proposed restore must also match current metadata, even if today's native file is newer.
+        if original is not None:
+            issue = game_guard.problem(self.root, rel, native_hash, saved)
+            if issue:
+                return issue
+        return game_guard.problem(self.root, rel, current_hash, saved)
+
+    def require_game_context(self, rel, original=None):
+        issue = self.game_context_problem(rel, original)
+        if issue:
+            raise RuntimeError(issue)
+
     def check_files(self):
-        """[(file, state)] for protected files: 'original', 'changed' (restorable) or 'unknown' (no original on record)."""
+        """Protected files: original, changed, unknown, or update (backup belongs to another build)."""
         path, guard = self._guard()
+        context_path, contexts = self._guard_context()
         out = []
         for rel in self.protect:
             f = self.root / rel
             if not f.is_file():
                 continue
             digest = sha256(f)
+            if self.game_context_problem(rel):
+                out.append((rel, 'update'))
+                continue
             if rel not in guard and digest in self.originals.get(rel, []):
                 self.trust(rel, digest)  # matches a known original release: back it up now
                 guard[rel] = digest
+            elif rel in guard and rel not in contexts:
+                # Legacy guards gain metadata/build checks without replacing their native backup.
+                contexts[rel] = game_guard.original_context(self.root, rel, guard[rel])
+                save(context_path, contexts)
             out.append((rel, "unknown" if rel not in guard else "original" if digest == guard[rel] else "changed"))
         return out
 
@@ -247,19 +350,35 @@ class Game:
         """Record the file as it is now as the original (after a verified release or a game update) and keep a copy."""
         path, guard = self._guard()
         f = self.root / rel
+        native_hash = digest or sha256(f)
+        issue = game_guard.problem(self.root, rel, native_hash)
+        if issue:
+            raise RuntimeError(issue)
         copy = self.backup / "_originals" / rel
         copy.parent.mkdir(parents=True, exist_ok=True)
+        if copy.is_file() and sha256(copy) != native_hash:
+            previous = copy.with_name(copy.name + '.' + sha256(copy) + '.previous-original')
+            if not previous.exists():
+                shutil.copy2(copy, previous)
         shutil.copy2(f, copy)
-        guard[rel] = digest or sha256(f)
+        guard[rel] = native_hash
         if sha256(copy) != guard[rel]:
             raise RuntimeError(f"Backup of {rel} doesn't match the file; not recorded")
         save(path, guard)
+        context_path, contexts = self._guard_context()
+        contexts[rel] = game_guard.context(self.root, rel)
+        save(context_path, contexts)
 
     def restore_original(self, rel):
         path, guard = self._guard()
         copy = self.backup / "_originals" / rel
         if rel not in guard or not copy.is_file() or sha256(copy) != guard[rel]:
             raise RuntimeError(f"No verified original of {rel} to restore. Use Steam's 'Verify integrity of game files'.")
+        self.require_game_context(rel)
+        _, contexts = self._guard_context()
+        issue = game_guard.problem(self.root, rel, guard[rel], contexts.get(rel))
+        if issue:
+            raise RuntimeError(issue)
         shutil.copy2(copy, self.root / rel)
         if sha256(self.root / rel) != guard[rel]:
             raise RuntimeError(f"Restoring {rel} failed (is the game still running?)")
@@ -290,6 +409,13 @@ def mod_report(g):
     return lines
 
 
+class ProcessEntry32W(ctypes.Structure):
+    _fields_ = [('dwSize', wt.DWORD), ('cntUsage', wt.DWORD), ('th32ProcessID', wt.DWORD),
+                ('th32DefaultHeapID', ctypes.c_size_t), ('th32ModuleID', wt.DWORD), ('cntThreads', wt.DWORD),
+                ('th32ParentProcessID', wt.DWORD), ('pcPriClassBase', wt.LONG), ('dwFlags', wt.DWORD),
+                ('szExeFile', wt.WCHAR * 260)]
+
+
 k32 = ctypes.WinDLL("kernel32", use_last_error=True)
 for _name, _res, _args in [
     ("OpenProcess", wt.HANDLE, [wt.DWORD, wt.BOOL, wt.DWORD]),
@@ -302,6 +428,10 @@ for _name, _res, _args in [
     ("CreateRemoteThread", wt.HANDLE, [wt.HANDLE, wt.LPVOID, ctypes.c_size_t, wt.LPVOID, wt.LPVOID, wt.DWORD, wt.LPVOID]),
     ("WaitForSingleObject", wt.DWORD, [wt.HANDLE, wt.DWORD]),
     ("GetExitCodeThread", wt.BOOL, [wt.HANDLE, ctypes.POINTER(wt.DWORD)]),
+    ("GetExitCodeProcess", wt.BOOL, [wt.HANDLE, ctypes.POINTER(wt.DWORD)]),
+    ("CreateToolhelp32Snapshot", wt.HANDLE, [wt.DWORD, wt.DWORD]),
+    ("Process32FirstW", wt.BOOL, [wt.HANDLE, ctypes.POINTER(ProcessEntry32W)]),
+    ("Process32NextW", wt.BOOL, [wt.HANDLE, ctypes.POINTER(ProcessEntry32W)]),
     ("CloseHandle", wt.BOOL, [wt.HANDLE]),
 ]:
     getattr(k32, _name).restype, getattr(k32, _name).argtypes = _res, _args
@@ -342,14 +472,55 @@ def inject(pid, dll):
         k32.CloseHandle(proc)
 
 
+def process_thread_counts(exe, kernel=None):
+    """Read kernel execution-thread counts; a failed/incomplete snapshot proves nothing."""
+    kernel = kernel or k32
+    snapshot = kernel.CreateToolhelp32Snapshot(2, 0)  # TH32CS_SNAPPROCESS: read-only system process list.
+    if not snapshot or snapshot == wt.HANDLE(-1).value:
+        return {}
+    try:
+        entry = ProcessEntry32W()
+        entry.dwSize = ctypes.sizeof(entry)
+        ctypes.set_last_error(0)
+        available = kernel.Process32FirstW(snapshot, ctypes.byref(entry))
+        counts = {}
+        while available:
+            if entry.szExeFile.lower() == exe.lower():
+                counts[entry.th32ProcessID] = entry.cntThreads
+            available = kernel.Process32NextW(snapshot, ctypes.byref(entry))
+        return counts if ctypes.get_last_error() == 18 else {}  # ERROR_NO_MORE_FILES completes a snapshot.
+    finally:
+        kernel.CloseHandle(snapshot)
+
+
+def process_exited(pid, kernel=None, thread_count=None):
+    """Confirm termination, or an inaccessible shell with no kernel execution threads; unknown stays live."""
+    kernel = kernel or k32
+    process = kernel.OpenProcess(0x101000, False, pid)  # SYNCHRONIZE | QUERY_LIMITED_INFORMATION
+    if not process:
+        return thread_count == 0
+    try:
+        state = kernel.WaitForSingleObject(process, 0)
+        if state == 0:  # Process object signaled: terminated, even when its exit code happens to be 259.
+            return True
+        if state == 0x102:  # WAIT_TIMEOUT: the process object is still running.
+            return False
+        code = wt.DWORD()
+        return bool(kernel.GetExitCodeProcess(process, ctypes.byref(code))) and code.value != 259
+    finally:
+        kernel.CloseHandle(process)
+
+
 def pids(exe):
     # Bytes, not text=True: on some Windows languages tasklist prints bytes the default codepage can't decode, and
     # subprocess then silently returns None. The name, PID and digits needed here are all ASCII.
     out = subprocess.run(["tasklist", "/FO", "CSV", "/NH", "/FI", f"IMAGENAME eq {exe}"], capture_output=True,
                          creationflags=subprocess.CREATE_NO_WINDOW).stdout.decode("ascii", "replace")
-    # an exited game can linger as a 48 K husk while Steam holds its handle; only count ones using real memory
-    return [int(r[1]) for r in csv.reader(out.splitlines()) if len(r) > 4 and r[0].lower() == exe.lower()
-            and int(re.sub(r"\D", "", r[4]) or 0) > 1024]
+    # Steam/crash handlers can retain an exited process object. Memory use cannot prove it is alive or dead.
+    candidates = [int(r[1]) for r in csv.reader(out.splitlines()) if len(r) > 1
+                  and r[0].lower() == exe.lower() and r[1].isdigit()]
+    threads = process_thread_counts(exe) if candidates else {}
+    return [pid for pid in candidates if not process_exited(pid, thread_count=threads.get(pid))]
 
 
 IMAGE_DIRS = ("Decals", "Paint")
@@ -1007,7 +1178,16 @@ def gui():
         """Game file guard: say if a core game file was changed outside the Mod Manager and offer to restore it."""
         g = game()
         for rel, state in g.check_files():
-            if state == "changed" and messagebox.askyesno("Game files", f"{rel} has been changed outside the Mod Manager, "
+            if state == 'update':
+                issue = g.game_context_problem(rel)
+                current_issue = game_guard.problem(g.root, rel, sha256(g.root / rel))
+                if current_issue:
+                    messagebox.showwarning('Game files', current_issue)
+                elif messagebox.askyesno('Game files', issue + '\n\n'
+                        'If you have verified this update in Steam, keep these current files as the new original? '
+                        'The previous original will be preserved in backup.'):
+                    g.trust(rel)
+            elif state == "changed" and messagebox.askyesno("Game files", f"{rel} has been changed outside the Mod Manager, "
                     "for example by a patcher. Patched game code breaks after Sprocket updates and can crash the game.\n\n"
                     f"Restore the original {rel} now?" + ("\n(No = launch with the changed file.)" if launching else "")):
                 g.restore_original(rel)
@@ -1018,10 +1198,12 @@ def gui():
                 g.trust(rel)
         states = dict(g.check_files())
         status["text"] = "Game files: " + (", ".join(f"{k} {v}" for k, v in states.items()) or "nothing protected")
+        return 'update' not in states.values()
 
     def launch():
         g = game()
-        check_files(launching=True)
+        if not check_files(launching=True):
+            return
         subprocess.Popen([str(g.root / g.exe)], cwd=g.root)
         dlls = g.inject_dlls()
         if dlls:

@@ -25,20 +25,20 @@ Open a terminal (on Steam Deck, switch to Desktop Mode and open **Konsole**). Ch
 cd ~/.local/share/Steam/steamapps/common/Sprocket || exit
 [ -f Sprocket.exe ] || { echo "This is not the Sprocket folder"; exit 1; }
 curl -fL -o bepinex.zip 'https://builds.bepinex.dev/projects/bepinex_be/788/BepInEx-Unity.IL2CPP-win-x64-6.0.0-be.788%2B5b766a3.zip'
-curl -fL -o patch.zip 'https://github.com/Hans21223/Sprocket-Mod-Loader/releases/download/v1.2.1/Sprocket-Mod-Loader-1.2.1.zip'
+curl -fL -o patch.zip 'https://github.com/Hans21223/Sprocket-Mod-Loader/releases/download/v1.2.2/Sprocket-Mod-Loader-1.2.2.zip'
 sha256sum -c <<'SUMS' || exit
 f4cc496bd098a0df4164b81e3737297707f13a47c2478dba2f60eefab784817a  bepinex.zip
-bdb120752a7e0cff436e6c4e85ed9b117eeb71da20e9842678213eec309ed547  patch.zip
+c1eed21905511ec32ba2042c2c99c10a18f44850f9edac853b07483faad13055  patch.zip
 SUMS
 unzip -oq bepinex.zip
-unzip -oq patch.zip 'Sprocket-Mod-Loader-1.2.1/Patch/*' -d patch-tmp
-cp -r patch-tmp/Sprocket-Mod-Loader-1.2.1/Patch/BepInEx .
+unzip -oq patch.zip 'Sprocket-Mod-Loader-1.2.2/Patch/*' -d patch-tmp
+cp -r patch-tmp/Sprocket-Mod-Loader-1.2.2/Patch/BepInEx .
 rm -rf patch-tmp bepinex.zip patch.zip
 echo "Loader installed"
 ```
 
 What it does:
-- downloads official BepInEx be.788 and the Sprocket 1.2.1 patch;
+- downloads official BepInEx be.788 and the Sprocket 1.2.2 patch;
 - checks both files' SHA-256 (it stops if either doesn't match);
 - unpacks BepInEx into the game folder, then copies the patch's five DLLs over BepInEx's.
 

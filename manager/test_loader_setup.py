@@ -229,12 +229,14 @@ class OneClickTests(unittest.TestCase):
         self.home = Path(self.temp.name)
         self.root = self.home / 'game'
         self.root.mkdir()
+        (self.root / 'GameAssembly.dll').write_bytes(b'fixture game')
         self.game = Game(self.home, 'test', self.root, 'Sprocket.exe')
         self.base = self.zip('base.zip', {'winhttp.dll': b'doorstop', 'doorstop_config.ini': b'config',
                                           'BepInEx/core/Il2CppInterop.HarmonySupport.dll': b'upstream'})
-        self.patch = self.zip('patch.zip', {'Sprocket-Mod-Loader-1.2.1/Patch/BepInEx/core/Il2CppInterop.HarmonySupport.dll':
+        self.prefix = setup.PATCH_NAME.removesuffix('.zip') + '/Patch/'
+        self.patch = self.zip('patch.zip', {self.prefix + 'BepInEx/core/Il2CppInterop.HarmonySupport.dll':
                                             b'patched',
-                                         'Sprocket-Mod-Loader-1.2.1/Patch/BepInEx/core/Il2CppInterop.Generator.dll':
+                                         self.prefix + 'BepInEx/core/Il2CppInterop.Generator.dll':
                                             b'ui-generator'})
         self.melon = self.zip('downloads/MLLoader IL2CPP BepInEx6 V0.7.3-26-2-3-9.zip', {
             'BepInEx/patchers/BepInEx.MelonLoader.Loader.Patcher.dll': b'patcher',
@@ -304,10 +306,10 @@ class OneClickTests(unittest.TestCase):
 
     def test_missing_ui_generator_fails_before_installing(self):
         self.patch = self.zip('patch-missing-generator.zip', {
-            'Sprocket-Mod-Loader-1.2.1/Patch/BepInEx/core/Il2CppInterop.HarmonySupport.dll': b'patched'})
+            self.prefix + 'BepInEx/core/Il2CppInterop.HarmonySupport.dll': b'patched'})
         with self.assertRaisesRegex(RuntimeError, 'missing BepInEx/core/Il2CppInterop.Generator.dll'):
             setup.install(self.game, self.home, None, lambda _: [])
-        self.assertEqual(list(self.root.iterdir()), [])
+        self.assertEqual([p.name for p in self.root.iterdir()], ['GameAssembly.dll'])
         self.assertEqual(self.game.enabled, {})
 
 

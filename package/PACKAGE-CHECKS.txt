@@ -1,4 +1,19 @@
-Package checks, 2026-10-02, version 1.2.1
+Package checks, 2026-10-09, version 1.2.2
+
+Adds the separately traced Sprocket 0.2.56.0 native/metadata profile, retaining 0.2.55.5.
+Runtime, Common and HarmonySupport were rebuilt together; Generator and TerraFX are unchanged.
+Release build completed with zero errors and 184 existing warnings.
+Native validator passed 3 PE unwind boundaries/prologues, 7 call edges and the retained ABI/layout checks.
+Seven hook/caller/helper function bodies match the prior binary after verified relocations.
+111 shared native hook-chain checks passed.
+66 manager tests and modman.pyw --selftest passed, including Steam build-aware restores, both crossed metadata pairs, safe mod disabling and exited-process detection.
+Prepare-Loader.ps1 prepared 229 files from the checksum-verified cached official be.788 ZIP.
+All five prepared patch DLLs matched their expected SHA-256 hashes.
+Source ZIP and release ZIP are CRC checked by tools/package-release.py.
+The package contains no game binaries, generated game assemblies, mod DLLs or personal game data.
+No new game session was launched; 0.2.56.0 startup/editor/gameplay and third-party mod combinations require user testing.
+
+Historical package checks, 2026-10-02, version 1.2.1
 
 Adds Il2CppInterop.Generator.dll with the Unity RectOffset constructor restoration pass.
 Runtime, Common, HarmonySupport and TerraFX DLLs remain byte-identical to 1.2.0.

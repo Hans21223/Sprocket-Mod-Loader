@@ -1,5 +1,6 @@
 # Locally prepared upstream downloads and release copies
 /releases/
+/audit-*/
 **/Ready-to-copy/
 **/preparing-*/
 BepInEx-*.zip
