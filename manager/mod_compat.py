@@ -14,7 +14,7 @@ CODED = {
     'HasCustomAttribute': (5, (6, 4, 1, 2, 8, 9, 0x0A, 0, 0x0E, 0x17, 0x14, 0x11, 0x1A, 0x1B, 0x20, 0x23, 0x26, 0x27, 0x28, 0x2A, 0x2C, 0x2B)),
     'HasFieldMarshal': (1, (4, 8)), 'HasDeclSecurity': (2, (2, 6, 0x20)), 'MemberRefParent': (3, (2, 1, 0x1A, 6, 0x1B)),
     'HasSemantics': (1, (0x14, 0x17)), 'MethodDefOrRef': (1, (6, 0x0A)), 'MemberForwarded': (1, (4, 6)),
-    'Implementation': (2, (0x26, 0x23, 0x27)), 'CustomAttributeType': (3, (6, 0x0A)),
+    'Implementation': (2, (0x26, 0x23, 0x27)), 'CustomAttributeType': (3, (None, None, 6, 0x0A, None)),  # tags 2, 3 only
     'ResolutionScope': (2, (0, 0x1A, 0x23, 1)), 'TypeOrMethodDef': (1, (2, 6)),
 }
 # Column layout of every table: 'u2'/'u4' fixed bytes, 's' string, 'g' guid, 'b' blob, int = row index into that
@@ -218,12 +218,32 @@ class Assembly:
         self.namespaces = {name.rsplit('.', 1)[0] for name in self.types if '.' in name and not name.startswith('<')}
         # Calls into other assemblies: (type, its assembly, member name, parameter count).
         self.calls = []
-        for parent, name, signature in meta.table(0x0A):
+        memberrefs = meta.table(0x0A)
+        for parent, name, signature in memberrefs:
             target = Metadata.decode('MemberRefParent', parent)
             if target and target[0] == 1 and target[1] < len(self.typerefs):
                 full, assembly = self.typerefs[target[1]]
                 if assembly:
                     self.calls.append((full, assembly, name, _arity(meta.blob(signature))))
+        # [BepInDependency(guid, SoftDependency)]: plugins this one uses when they're there and works without (such as
+        # the Sprocket Mod API), by GUID.
+        self.soft_dependencies = set()
+        for _, kind, value in meta.table(0x0C):
+            ctor = Metadata.decode('CustomAttributeType', kind)
+            if not ctor or ctor[0] != 0x0A or ctor[1] >= len(memberrefs):
+                continue
+            owner = Metadata.decode('MemberRefParent', memberrefs[ctor[1]][0])
+            if not owner or owner[0] != 1 or owner[1] >= len(self.typerefs) or self.typerefs[owner[1]][0] != 'BepInEx.BepInDependency':
+                continue
+            signature, blob = meta.blob(memberrefs[ctor[1]][2]), meta.blob(value)
+            try:  # (string guid, DependencyFlags flags): prolog 01 00, the guid, then the flags as an int (2 = soft)
+                length, pos = _compressed(blob, 2)
+                guid = blob[pos:pos + length].decode('utf-8')
+                if len(signature) > 4 and signature[1] == 2 and signature[4] == 0x11 and \
+                        int.from_bytes(blob[pos + length:pos + length + 4], 'little') & 2:
+                    self.soft_dependencies.add(guid)
+            except (IndexError, UnicodeError):
+                pass
 
 
 @lru_cache(maxsize=1024)
@@ -430,6 +450,14 @@ def _lacks(available, full, assembly_name, member, arity, depth=0):
         return _lacks(available, base[1][0], base[1][1] or '', member, arity, depth + 1) if base[1][1] else False
 
 
+def optional(assembly_name, soft_dependencies):
+    """An assembly a soft dependency provides: its name inside the plugin's GUID once both are reduced to letters and
+    digits (SprocketModAPI in furryaxw.sprocket-mod-api). The mod works without it, so it isn't missing."""
+    def bare(text):
+        return re.sub(r'[^a-z0-9]', '', text.lower())
+    return any(bare(assembly_name) and bare(assembly_name) in bare(guid) for guid in soft_dependencies)
+
+
 def check(game, base, files):
     """Notes (not errors) on a mod whose files install fine but can't work here: things it needs that the game and
     its loaders don't have, calls into game code this game doesn't have, or a library nothing uses."""
@@ -445,7 +473,8 @@ def check(game, base, files):
         if asm is None:
             continue
         name = Path(src).name
-        missing = sorted({a for a in asm.assembly_refs if not a.startswith(FRAMEWORK) and a.lower() not in available})
+        missing = sorted({a for a in asm.assembly_refs if not a.startswith(FRAMEWORK) and a.lower() not in available
+                          and not optional(a, asm.soft_dependencies)})
         loader = [a for a in missing if a.startswith(LOADER_ASSEMBLIES)] if not (game.root / BEPINEX_CORE).is_file() else []
         if loader:  # without the loader nothing else can be judged: it also generates the game's code on first run
             notes.append(f'{name}: needs {", ".join(loader)}, part of the mod loader, which isn\'t installed or is '

@@ -57,6 +57,10 @@ The installer also checks the matching game metadata. An older GameAssembly with
 
 ## What changed
 
+Manager 1.3.6 works alongside the [Sprocket Mod API](https://github.com/furryaxw/SprocketModAPI): a soft dependency (such as
+the API for Quality of Life 1.8.7) is no longer reported as missing, and a mod the API's Mods menu turned off (renamed to
+`.dll.disable`) is reported as turned off there; Disable removes the renamed file with the rest of the mod.
+
 Loader 1.2.2 and manager 1.3.5 support the separately checked 0.2.56.0 game files, block restoring older native backups after Steam updates, and ignore confirmed exited crash processes when checking whether the game is open. Live and uncertain processes still block installation. All 66 manager tests passed; gameplay testing remains pending.
 
 Disabling a manually preinstalled mod now preserves its duplicate backup outside the game instead of restoring an identical active DLL. If a mod DLL was changed outside the manager, it stays tracked and the manager explains why disabling could not finish. Edited saves and other user data remain preserved.

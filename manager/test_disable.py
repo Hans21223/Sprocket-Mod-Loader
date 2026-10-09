@@ -51,6 +51,18 @@ class DisableTests(unittest.TestCase):
         self.assertEqual(backup.with_name(backup.name + '.disabled-copy').read_bytes(), b'known mod')
         self.assertNotIn(self.mod, self.saved_state())
 
+    def test_dll_turned_off_in_the_mod_api_menu_goes_with_the_mod(self):
+        destination = self.enable()
+        parked = destination.with_name(destination.name + '.disable')
+        destination.rename(parked)  # the Sprocket Mod API's Mods menu turned it off
+        report = '\n'.join(module['mod_report'](self.game))
+        self.assertIn("turned off in the game's Mods menu", report)
+        self.assertNotIn('deleted outside', report)
+        self.assertEqual(self.game.disable(self.mod), [])
+        self.assertFalse(parked.exists())
+        self.assertFalse(destination.exists())
+        self.assertNotIn(self.mod, self.saved_state())
+
     def test_timestamp_only_change_does_not_keep_known_plugin(self):
         destination = self.enable()
         installed = stamp(destination)
