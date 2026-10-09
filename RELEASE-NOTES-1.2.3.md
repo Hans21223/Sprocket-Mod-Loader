@@ -20,4 +20,4 @@ An update that changes that runtime code, for example a new Unity version, is st
 
 Individual mods can still need their own updates when the game code they change is changed.
 
-<!-- sp-compat {"hamish.sprocket": ["0.2.55.5", "0.2.56.0", "0.2.56.1"], "bepinex.bepinex": "6.0.0-be.788"} -->
+<!-- sp-compat {"hamish.sprocket": ["0.2.55.5", "0.2.56.0"], "bepinex.bepinex": "6.0.0-be.788"} -->
