@@ -54,7 +54,7 @@ Then go back to Command Prompt and answer the rest with **y**, including install
 
 ### Install the loader
 
-1. **Put the `ModManager` folder somewhere it can stay.** Double-click `Sprocket-Mod-Manager-1.3.5.zip` to open it, then drag the `ModManager` folder out. The Sprocket game folder is a good place (in Steam, right-click **Sprocket** → **Manage** → **Browse local files**). Don't delete this folder later: it keeps the backups used to undo changes.
+1. **Put the `ModManager` folder somewhere it can stay.** Double-click `Sprocket-Mod-Manager-1.3.6.zip` to open it, then drag the `ModManager` folder out. The Sprocket game folder is a good place (in Steam, right-click **Sprocket** → **Manage** → **Browse local files**). Don't delete this folder later: it keeps the backups used to undo changes.
 2. **Close Sprocket** if it's running, then **double-click `modman.pyw`** in the `ModManager` folder. The manager finds Sprocket in your Steam library by itself and selects it in the box at the top.
 3. **Click Install mod loader.** That's the only click it needs. The manager downloads the official BepInEx and this patch, checks that they're the exact expected files, backs up anything it replaces, and installs. MLLoader is included if its ZIP is in your Downloads folder or on your Desktop.
 
@@ -161,6 +161,9 @@ The loader ZIP also contains **Prepare Loader.cmd**, an optional helper that dow
 
 ## What's new
 
+- **1.3.6 (Mod Manager):** works alongside the [Sprocket Mod API](https://github.com/furryaxw/SprocketModAPI). Mods that use it as an
+  optional (soft) dependency are no longer reported as missing it, and mods turned off in the API's Mods menu (renamed to
+  `.dll.disable`) are reported as such and cleaned up on Disable. The loader is unchanged.
 - **1.2.2 (loader, current) and 1.3.5 (Mod Manager):** adds separately validated Sprocket 0.2.56.0 native/metadata support while retaining 0.2.55.5. Prevents old game-code backups from being restored across Steam updates, fixes duplicate mod DLL restoration when disabling, and ignores confirmed exited crash processes. Native checks, 111 shared-hook checks and 66 manager tests passed; new-game gameplay testing remains pending.
 - **1.2.1 (loader):** restores the missing Unity constructor used by SprocketModAPI's F1 and keybinding menus. Original mod DLLs are unchanged. Builds and 200 focused checks passed; native menu testing remains pending. [Cause and upgrade instructions](docs/UNITY-UI-COMPATIBILITY.md).
 - **1.3.4 (Mod Manager):** download recovery and clean unmodding. If an official download is cut off or blocked by a filter, setup retries and explains what happened, or automatically uses a browser download from your Downloads folder. Adds **Remove all mods** to cleanly remove all mods and loader files, restoring original game files.

@@ -73,6 +73,12 @@ def loader_dll(rel):
         "mlloader/userlibs/", "mods/", "plugins/", "userlibs/"))
 
 
+def parked_dll(path):
+    """Where the Sprocket Mod API's Mods menu puts a DLL it turns off: <name>.dll.disable beside it (BepInEx loads
+    only *.dll; turning it on renames it back)."""
+    return path.with_name(path.name + ".disable")
+
+
 def archive_disabled_copy(backup):
     """Keep a duplicate pre-manager mod outside the game without restoring it as an active DLL."""
     destination = backup.with_name(backup.name + ".disabled-copy")
@@ -199,6 +205,8 @@ class Game:
         try:
             for rel, installed in reversed(list(files.items())):  # one at a time, so a failure leaves an accurate record
                 dst, bak = self.target(rel), self.backup / rel
+                if not dst.exists() and parked_dll(dst).is_file() and rel.lower() not in others:
+                    parked_dll(dst).unlink()  # this mod's DLL, turned off in the game's Mods menu: gone with the mod
                 if rel.lower() in others:
                     pass  # another enabled mod still uses this file; the last one out restores it
                 elif installed and dst.exists() and stamp(dst) != installed and not (
@@ -391,6 +399,11 @@ def mod_report(g):
     lines = [f"Mod loader: {n}" for n in mod_compat.loader_notes(g)]
     gone = {m: [rel for rel in files if not g.target(rel).exists()] for m, files in g.enabled.items()}
     for m, rels in gone.items():
+        parked = [rel for rel in rels if parked_dll(g.target(rel)).is_file()]
+        if parked:
+            lines.append(f"[{m}] is turned off in the game's Mods menu (the Sprocket Mod API renamed {parked[0]} to "
+                         ".dll.disable). Turn it on there again, or Disable it here.")
+        rels = [rel for rel in rels if rel not in parked]
         if rels:
             lines.append(f"[{m}] is enabled but {len(rels)} of its files are missing from the game (deleted outside the "
                          f"Mod Manager, e.g. {rels[0]}). Disable and enable it again to put them back.")

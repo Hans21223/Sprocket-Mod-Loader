@@ -122,5 +122,19 @@ class MissingLoader(unittest.TestCase):
         self.assertIn('start the game once', notes[0])
 
 
+class SoftDependencies(unittest.TestCase):
+    def test_an_assembly_a_soft_dependency_provides_is_optional(self):
+        self.assertTrue(mod_compat.optional('SprocketModAPI', {'furryaxw.sprocket-mod-api'}))
+        self.assertFalse(mod_compat.optional('SprocketModAPI', set()))
+        self.assertFalse(mod_compat.optional('OtherLib', {'furryaxw.sprocket-mod-api'}))
+
+    def test_soft_dependencies_read_from_a_plugin(self):
+        # A plugin built with [BepInDependency("furryaxw.sprocket-mod-api", SoftDependency)], such as Battle Editor.
+        dll = os.environ.get('MODMAN_TEST_SOFT_PLUGIN')
+        if not dll or not Path(dll).is_file():
+            self.skipTest('set MODMAN_TEST_SOFT_PLUGIN to a plugin with a soft BepInDependency')
+        self.assertIn('furryaxw.sprocket-mod-api', mod_compat.assembly(dll).soft_dependencies)
+
+
 if __name__ == '__main__':
     unittest.main()
