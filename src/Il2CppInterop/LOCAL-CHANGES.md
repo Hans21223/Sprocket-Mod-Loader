@@ -1,4 +1,4 @@
-# Local bridge changes (2026-09-23, 2026-09-24, 2026-10-02 and 2026-10-08)
+# Local bridge changes (2026-09-23, 2026-09-24, 2026-10-02, 2026-10-08 and 2026-10-10)
 
 Source base: BepInEx/Il2CppInterop commit 81a6f78c8b653e0da4a3420ac4cd00819e8b6292.
 This is an unofficial modified version, distributed under LGPL-3.0-only.
@@ -18,6 +18,8 @@ Version 1.2.0 repairs by-reference Il2CppSystem.ValueType argument conversion in
 Version 1.2.1 adds `Il2CppInterop.Generator/Passes/Pass82RestoreUnityUiConstructors.cs` and runs it from `Runners/InteropAssemblyGenerator.cs` after Unity unstripping and before native method maps and assembly output. It restores the missing managed `UnityEngine.RectOffset(int left, int right, int top, int bottom)` convenience constructor only when the expected native-backed wrapper, empty constructor and padding setters are present. The overload calls the empty constructor once and then each setter; it does not fabricate a native constructor pointer. This addresses SprocketModAPI's reported F1/keybinding menu `MissingMethodException` without rewriting its mod DLL. Generator and cache-repair builds plus 200 focused checks passed; native in-game menus have not been retested.
 
 Version 1.2.2 modifies `Il2CppInterop.Runtime/Injection/SprocketUnity6Profile.cs` to select separately traced 0.2.55.5 and 0.2.56.0 native profiles and verify matching metadata. The new native fingerprint is ADB36B5F04662BE0D40C6E548C797394659A9C0D4B009E3C0E718833ABF90B3A; metadata is 1B3052E0BC7391633366F8E246BB61F56B4F21D290A67949CB4E44CB5FEB2912. The three new RVAs are 0x4E46B0, 0x494B30 and 0x4CFCD0. Seven unwind-bounded hook/caller/helper functions match the previous build after verified relocations. Generic ABI and IL2CPP layout offsets are unchanged. The new Runtime and matching Common/HarmonySupport outputs were built together; Generator and TerraFX are unchanged. Offline validation and 111 shared-hook checks passed; new-game startup and gameplay were not tested.
+
+Version 1.2.3 replaces the per-build fingerprints in `Il2CppInterop.Runtime/Injection/SprocketUnity6Profile.cs` with a startup trace of the three targets: the exported call paths used for the earlier hand traces, with each target accepted only as the single candidate with the verified entry bytes, calling-convention bytes and function length. A build with changed IL2CPP runtime code is refused. `InjectorHelpers.cs` logs the traced Class::Init address, and the Runtime project grants `tests/NativeHookChain` internal access to run the trace against real game files.
 
 Hook sites and retired delegates intentionally remain rooted for the process lifetime so a native caller cannot return through collected callbacks. Removing a wrapper's Harmony patches rebuilds its body as a forwarding wrapper; it does not dispose the shared hook and disrupt other wrappers. This supports both canonical Sprocket types and MLLoader's Il2CppSprocket aliases without modifying the mods.
 Source archive copies carry a dated comment identifying these modifications. The comments were added for redistribution; they do not alter the compiled behavior.
@@ -42,4 +44,4 @@ No Sprocket executable, game assets, personal data or generated Sprocket assembl
 
 ## Future game builds
 
-Re-establish function boundaries, exported call paths and calling conventions against the new binary, then test startup, injected components and gameplay. Do not merely replace the allowed game hash. The existing constants apply only to the fingerprint documented in SprocketUnity6Profile.cs.
+Builds whose IL2CPP runtime code is unchanged need nothing: the bridge traces them at startup. When it refuses a build, re-establish function boundaries, exported call paths and calling conventions against the new binary, update the trace's expected bytes and lengths together, then test startup, injected components and gameplay.
