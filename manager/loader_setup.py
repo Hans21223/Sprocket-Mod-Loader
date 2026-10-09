@@ -18,10 +18,10 @@ MOD = 'Sprocket mod loader - BepInEx + MLLoader'
 BASE_NAME = 'BepInEx-Unity.IL2CPP-win-x64-6.0.0-be.788+5b766a3.zip'
 BASE_HASH = 'f4cc496bd098a0df4164b81e3737297707f13a47c2478dba2f60eefab784817a'
 BASE_URL = 'https://builds.bepinex.dev/projects/bepinex_be/788/' + BASE_NAME.replace('+', '%2B')
-PATCH_NAME = 'Sprocket-Mod-Loader-1.2.2.zip'
-PATCH_HASH = 'c1eed21905511ec32ba2042c2c99c10a18f44850f9edac853b07483faad13055'
-PATCH_URL = 'https://github.com/Hans21223/Sprocket-Mod-Loader/releases/download/v1.2.2/' + PATCH_NAME
-PATCH_PUBLISHED = True  # Public v1.2.2 release; still verifies the exact package checksum before use.
+PATCH_NAME = 'Sprocket-Mod-Loader-1.2.3.zip'
+PATCH_HASH = 'e54f09a863913b96dc2eb15402ee1a8a91ba46d60548c3be04c6e672ec43fe15'
+PATCH_URL = 'https://github.com/Hans21223/Sprocket-Mod-Loader/releases/download/v1.2.3/' + PATCH_NAME
+PATCH_PUBLISHED = True  # Public v1.2.3 release; still verifies the exact package checksum before use.
 MELON_HASH = 'bdc630e635de656c47f2a011f5e700115e09b70c3b33ac512018ef728f39d9cd'
 MELON_PAGE = 'https://www.nexusmods.com/ironnest/mods/26'
 MELON_CACHE = 'MLLoader-2.3.9.zip'
@@ -143,9 +143,7 @@ def validate_game(game, running):
         raise RuntimeError('Select the Sprocket game folder containing Sprocket.exe.')
     if running('Sprocket.exe'):
         raise RuntimeError('Close Sprocket before installing the loader.')
-    if digest(game.root / 'GameAssembly.dll').upper() not in game_guard.supported_pairs():
-        raise RuntimeError('This Sprocket build is not supported by the patch. No files were installed.')
-    game_guard.require_supported_pair(game.root)
+    game_guard.require_supported_build(game.root)
 
 
 def steam_libraries(steam_folders=None):
@@ -219,10 +217,6 @@ def install(game, home, melon_zip, running, report=lambda message: None):
     """Install BepInEx be.788, the Sprocket patch and, when its ZIP is given or cached, MLLoader."""
     home = Path(home)
     validate_game(game, running)
-    if (digest(game.root / 'GameAssembly.dll').upper() == game_guard.UPDATED_GAME_HASH and
-            PATCH_NAME != 'Sprocket-Mod-Loader-1.2.2.zip'):
-        raise RuntimeError('Sprocket 0.2.56.0 requires the updated loader 1.2.2 package. '
-                           'The previous loader cannot be installed into this build. No files were installed.')
     cache = home / 'loader-cache'
     cache.mkdir(parents=True, exist_ok=True)
     cached_melon = cache / MELON_CACHE

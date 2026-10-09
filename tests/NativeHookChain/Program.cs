@@ -56,6 +56,42 @@ static class Program
         }
         Check(physical.Applies == 1, "Refresh must not reapply physical hooks");
         Console.WriteLine($"NATIVE_CHAIN_TESTS_OK: {checks} checks; alias chaining, refresh/unpatch forwarding, GC, ABI rejection and byref arguments");
+        TraceGameBuilds();
+    }
+
+    // Hook targets traced from real game builds listed in SPROCKET_GAME_ASSEMBLIES (';'-separated; never distributed).
+    static readonly Dictionary<string, SprocketUnity6Profile.Targets> Traced = new()
+    {
+        ["18A9A15B5E5F11898ED4DC34FC3E2D4C12950C3B37AC1FA499E8B00592DEDD56"] = new(0x4E4160, 0x4945E0, 0x4CF780), // 0.2.55.5
+        ["ADB36B5F04662BE0D40C6E548C797394659A9C0D4B009E3C0E718833ABF90B3A"] = new(0x4E46B0, 0x494B30, 0x4CFCD0), // 0.2.56.0
+        ["FCF745C40A02406A4D757A859A8FFCEF67D82835C98BE557312861E843B04FFC"] = new(0x4E4790, 0x494C10, 0x4CFDB0), // 0.2.56.1
+    };
+    [DllImport("kernel32", CharSet = CharSet.Unicode, SetLastError = true)] static extern IntPtr LoadLibraryExW(string path, IntPtr file, int flags);
+    [DllImport("kernel32")] static extern bool FreeLibrary(IntPtr module);
+
+    static void TraceGameBuilds()
+    {
+        var paths = (Environment.GetEnvironmentVariable("SPROCKET_GAME_ASSEMBLIES") ?? "").Split(';', StringSplitOptions.RemoveEmptyEntries);
+        foreach (var path in paths)
+        {
+            var copy = Path.Combine(Path.GetTempPath(), $"GameAssembly-trace-{Guid.NewGuid():N}.dll");
+            File.Copy(path, copy);
+            var module = LoadLibraryExW(copy, IntPtr.Zero, 1); // DONT_RESOLVE_DLL_REFERENCES: mapped, never run
+            try
+            {
+                Check(module != IntPtr.Zero, $"{path}: could not be mapped");
+                IntPtr Export(string name) => NativeLibrary.TryGetExport(module, name, out var address) ? address : IntPtr.Zero;
+                var targets = SprocketUnity6Profile.Trace(module, Export, out var failure);
+                Check(targets != null, $"{path}: {failure}");
+                var hash = Convert.ToHexString(System.Security.Cryptography.SHA256.HashData(File.ReadAllBytes(path)));
+                if (Traced.TryGetValue(hash, out var expected)) Check(targets == expected, $"{path}: traced {targets}, verified {expected}");
+                Check(SprocketUnity6Profile.Trace(module, name => name == "mono_class_instance_size" ? IntPtr.Zero : Export(name), out failure) == null
+                    && failure == "Class::Init not found", "A broken call path must be refused");
+                Console.WriteLine($"GAME_TRACE_OK: {path} -> {targets}{(Traced.ContainsKey(hash) ? " (matches the verified trace)" : " (new build)")}");
+            }
+            finally { if (module != IntPtr.Zero) FreeLibrary(module); File.Delete(copy); }
+        }
+        if (paths.Length == 0) Console.WriteLine("GAME_TRACE_SKIPPED: set SPROCKET_GAME_ASSEMBLIES to GameAssembly.dll paths");
     }
 
     sealed class FakeDetour : IDetour

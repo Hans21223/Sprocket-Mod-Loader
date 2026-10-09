@@ -1,6 +1,7 @@
 """Offline fixtures for Steam updates, mixed IL2CPP files and same-build native backups."""
 import hashlib
 import json
+import os
 from pathlib import Path
 import runpy
 import tempfile
@@ -48,8 +49,23 @@ class GameGuardTests(unittest.TestCase):
         return self.game.backup / '_originals' / game_guard.NATIVE
 
     def test_supported_pair_accepts_before_download(self):
-        loader_setup.validate_game(self.game, lambda _: [])
+        with patch.object(game_guard, 'trace_failure', return_value=None):
+            loader_setup.validate_game(self.game, lambda _: [])
         self.assertFalse((self.home / 'manager/loader-cache').exists())
+
+    def test_untraceable_build_refused_with_the_reason(self):
+        with patch.object(game_guard, 'trace_failure', return_value='Class::Init not found'):
+            with self.assertRaisesRegex(RuntimeError, r'not supported by the loader.*Class::Init not found'):
+                loader_setup.validate_game(self.game, lambda _: [])
+
+    def test_real_game_builds_trace(self):
+        # Real GameAssembly.dll files listed in MODMAN_TEST_GAME_ASSEMBLIES (';'-separated); never distributed.
+        paths = [p for p in os.environ.get('MODMAN_TEST_GAME_ASSEMBLIES', '').split(';') if p]
+        if not paths:
+            self.skipTest('set MODMAN_TEST_GAME_ASSEMBLIES to GameAssembly.dll paths')
+        for path in paths:
+            self.assertIsNone(game_guard.trace_failure(path), path)
+        self.assertEqual(game_guard.trace_failure(self.native), 'unreadable GameAssembly')
 
     def test_old_native_with_new_metadata_refused_without_backup_mutation(self):
         backup = self.guard()
@@ -179,7 +195,8 @@ class GameGuardTests(unittest.TestCase):
         self.native.write_bytes(b'new native')
         self.metadata.write_bytes(b'new metadata')
         with patch.multiple(game_guard, UPDATED_GAME_HASH=game_guard.digest(self.native),
-                            UPDATED_METADATA_HASH=game_guard.digest(self.metadata)):
+                            UPDATED_METADATA_HASH=game_guard.digest(self.metadata)), \
+                patch.object(game_guard, 'trace_failure', return_value=None):
             loader_setup.validate_game(self.game, lambda _: [])
             self.metadata.write_bytes(b'old metadata')
             with self.assertRaisesRegex(RuntimeError, 'different builds'):
@@ -196,17 +213,6 @@ class GameGuardTests(unittest.TestCase):
                 self.game.trust(game_guard.NATIVE)
             self.assertFalse((self.game.backup / '_originals' / game_guard.NATIVE).exists())
             self.assertFalse(self.game.state.with_name('Sprocket.guard.json').exists())
-
-    def test_updated_game_cannot_install_previous_loader_payload(self):
-        self.build('25808118', '3052560297148110237')
-        self.native.write_bytes(b'new native')
-        self.metadata.write_bytes(b'new metadata')
-        with patch.multiple(game_guard, UPDATED_GAME_HASH=game_guard.digest(self.native),
-                            UPDATED_METADATA_HASH=game_guard.digest(self.metadata)):
-            with patch.object(loader_setup, 'PATCH_NAME', 'Sprocket-Mod-Loader-1.2.1.zip'):
-                with self.assertRaisesRegex(RuntimeError, 'requires the updated loader'):
-                    loader_setup.install(self.game, self.home / 'manager', None, lambda _: [])
-        self.assertFalse((self.home / 'manager/loader-cache').exists())
 
     def test_unpublished_package_missing_locally_never_requests_network(self):
         cache = self.home / 'loader-cache'

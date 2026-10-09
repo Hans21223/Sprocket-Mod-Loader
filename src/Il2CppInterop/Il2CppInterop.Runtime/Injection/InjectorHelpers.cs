@@ -170,7 +170,7 @@ namespace Il2CppInterop.Runtime.Injection
         {
             if (SprocketUnity6Profile.Active)
             {
-                Logger.Instance.LogInformation("Sprocket: using verified Class::Init RVA 0x4E4160");
+                Logger.Instance.LogInformation("Sprocket: using traced Class::Init RVA 0x{Rva:X}", SprocketUnity6Profile.ClassInitRva);
                 return Marshal.GetDelegateForFunctionPointer<d_ClassInit>(SprocketUnity6Profile.ClassInit);
             }
             static nint GetClassInitSubstitute()

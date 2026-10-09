@@ -1,6 +1,12 @@
-# Sprocket Mod Loader compatibility pack 1.2.2
+# Sprocket Mod Loader compatibility pack 1.2.3
 
-An **unofficial Sprocket-specific patch for BepInEx 6 be.788**, version 1.2.2. Its new Sprocket 0.2.56.0 profile was validated offline; gameplay testing remains pending. This is the loader compatibility package.
+An **unofficial Sprocket-specific patch for BepInEx 6 be.788**, version 1.2.3. This is the loader compatibility package.
+
+## New in 1.2.3
+
+Game updates no longer need a new loader when they keep Unity's IL2CPP runtime unchanged, which is the usual case for Sprocket's patches and experimental builds. At every start the bridge finds its three native hook targets itself. It follows the exported call paths used to trace 0.2.55.5 and 0.2.56.0, and accepts each target only as the single candidate with the verified entry bytes, calling-convention bytes and function length. It no longer pins exact GameAssembly and metadata fingerprints. An update that changes that runtime code is refused, as before, and the game runs without mods until the loader is updated. BepInEx and MLLoader already regenerate their interop assemblies after an update. The Mod Manager's **Install mod loader** check uses the same trace.
+
+Tested on Sprocket **0.2.56.1** (experimental): the runtime trace, BepInEx, MLLoader and four BepInEx plugins started, and the game reached the main menu. The trace finds the previously verified targets in 0.2.55.5 and 0.2.56.0.
 
 ## New in 1.2.2
 
@@ -20,12 +26,10 @@ The loader now shares native hooks between BepInEx wrappers and MLLoader aliases
 
 ## Supported game
 
-- Windows x64, Sprocket **0.2.55.5** or **0.2.56.0**, Unity **6000.3.21f1**.
-- 0.2.55.5 native SHA-256: `18A9A15B5E5F11898ED4DC34FC3E2D4C12950C3B37AC1FA499E8B00592DEDD56`; metadata: `6B0D5FB3E62F4F765C2E56289B8DCD8BC81F21FCCEF938D69CEDFFA5D31C52E0`.
-- 0.2.56.0 native SHA-256: `ADB36B5F04662BE0D40C6E548C797394659A9C0D4B009E3C0E718833ABF90B3A`; metadata: `1B3052E0BC7391633366F8E246BB61F56B4F21D290A67949CB4E44CB5FEB2912`.
+- Windows x64, Sprocket with Unity **6000.3.21f1**'s IL2CPP runtime: tested on **0.2.55.5**, **0.2.56.0** and **0.2.56.1**.
 - Base loader: **BepInEx Unity.IL2CPP win-x64 6.0.0-be.788+5b766a3**.
 
-A game update can break compatibility even if the displayed version looks similar. The bridge rejects unknown native/metadata pairs. If older code was restored into updated game assets, use Steam's **Verify integrity of game files** before installing this loader.
+A game update can still break compatibility, for example by moving to another Unity version. The bridge then refuses to start mods and says so in `BepInEx/LogOutput.log`; the game itself runs normally. Individual mods can also need updates when the game code they patch changes. If older game code was restored into updated game assets, use Steam's **Verify integrity of game files**.
 
 ## Install
 
@@ -35,7 +39,7 @@ A game update can break compatibility even if the displayed version looks simila
 2. Extract this ZIP into a normal writable folder, such as Downloads. Double-click **Prepare Loader.cmd**. It downloads the exact official BepInEx build, checks its checksum, and creates **Ready-to-copy** with the patch already applied. It does not change or launch the game. Windows PowerShell is included in Windows; Python and a .NET SDK are not needed.
 3. Open Steam > Sprocket > Properties > Installed Files > Browse. Before copying anything, back up any existing `BepInEx`, `dotnet`, `winhttp.dll`, `doorstop_config.ini`, `.doorstop_version` and `changelog.txt` to a separate folder. If another loader owns `winhttp.dll`, uninstall that loader using its own instructions first.
 4. Copy the **contents** of Ready-to-copy into the folder containing **Sprocket.exe**. Merge folders and replace the loader files when prompted. Do not copy the outer Ready-to-copy folder itself. Start with third-party plugins removed to a temporary folder.
-5. Start the game normally through Steam. The first launch generates interoperability files and may need internet access for BepInEx dependencies. Check `BepInEx/LogOutput.log` for **native and metadata SHA-256 verified**, with your supported Sprocket version, then confirm that the main menu works.
+5. Start the game normally through Steam. The first launch generates interoperability files and may need internet access for BepInEx dependencies. Check `BepInEx/LogOutput.log` for **Sprocket / Unity 6000.3.21f1 runtime traced**, then confirm that the main menu works.
 6. Close the game, put a compatible **BepInEx IL2CPP** mod in `BepInEx/plugins` according to that mod's instructions, and relaunch. Add mods one at a time. No gameplay mod is included here.
 
 Never launch with the unpatched official build between steps: Prepare Loader applies the compatibility files before you install anything.
