@@ -1,21 +1,28 @@
 # Mod Manager with one-click loader setup
 
-Windows, Python 3.9 or newer with Tkinter. Pillow is optional for image previews.
+Windows. **Nothing to install:** the manager brings its own Python. `Mod Manager.exe` is Python's own `pythonw.exe` from
+python.org, renamed, still signed by the Python Software Foundation; started on its own, it opens `modman.pyw` beside it
+(`python\sitecustomize.py` does that). There's no other program in the folder. If you have Python 3.9 or newer
+yourself, double-clicking `modman.pyw` works too. Pillow, if your own Python has it, adds image previews.
 
-**No Python yet?** Install **Python install manager** from [python.org/downloads](https://www.python.org/downloads/), then open Command Prompt, type `py` and answer **y** to each question. If it opens **App execution aliases**, turn on **Python (default)**, **Python (default windowed)** and **Python install manager**, and turn off the **App Installer** `python.exe` / `python3.exe` entries. Check with `py --version`; if no Python is installed yet, run `py install default`. Full steps and fixes: [Install Python](https://github.com/Hans21223/Sprocket-Mod-Loader#install-python).
+**Updates:** when it opens, the manager checks GitHub for new releases of Quality of Life, Battle Editor, Map Framework,
+Language Framework, the manager itself and its loader, and offers only versions made for your Sprocket version (each
+release's `sp-compat` line). Click **Yes** and it installs them the usual way: disable, replace, enable, every download
+checked against the release's SHA-256. Files you added inside a mod's folder, such as Map Framework's `CustomMaps`, stay.
+When the manager updates itself it opens again, and runs **Install mod loader** if the new version pins a newer loader.
 
 For MelonLoader mods, also download the **MLLoader IL2CPP BepInEx6 V0.7.3 / 2.3.9 ZIP** from [Tong317's Nexus page](https://www.nexusmods.com/ironnest/mods/26) and leave it in Downloads. The manager finds it there. MLLoader isn't redistributed here, and Nexus Mods needs a login, so the manager can't download it itself. BepInEx mods don't need it.
 
 1. **Put this `ModManager` folder somewhere it can stay.** The Sprocket game folder is a good place (in Steam, right-click **Sprocket** → **Manage** → **Browse local files**). It keeps the backups used to undo changes, so don't delete it later.
 
-   **Upgrading?** Copy `modman.pyw`, `loader_setup.py`, `mod_compat.py` and `game_guard.py` over the ones in your existing manager folder. Keep your games.json, mods, state and backup folders.
-2. **Close Sprocket**, then double-click `modman.pyw`. The manager finds Sprocket next to its folder or in any Steam library and selects it at the top. If it doesn't, click **Add game**, choose the game folder, then choose `Sprocket.exe`.
+   **Upgrading from 1.3.x?** Copy everything from the new `ModManager` folder over your existing one, once. Keep your games.json, mods, state and backup folders. From 1.4.0 on, the manager updates itself.
+2. **Close Sprocket**, then double-click `Mod Manager.exe`. The manager finds Sprocket next to its folder or in any Steam library and selects it at the top. If it doesn't, click **Add game**, choose the game folder, then choose `Sprocket.exe`.
 3. **Click Install mod loader.** Setup downloads official BepInEx be.788 and the checksum-verified Sprocket loader 1.2.3 patch, backs up the files it replaces, installs everything, and turns on one combined entry: `Sprocket mod loader - BepInEx + MLLoader`. MLLoader is included when its ZIP is in Downloads, on the Desktop, or in or next to this folder. The manager keeps checked copies for later installs, and can also use matching ZIPs downloaded in your browser.
 
    Without the ZIP it asks: **Yes** to choose it, **No** to install without MLLoader for now (click **Install mod loader** again later to add it). It won't leave MLLoader out once MelonLoader mods use it.
 4. **Wait for "Installed and verified … loader files"** at the bottom.
 5. **Click Launch.** The first start is slower than usual while BepInEx sets itself up.
-6. **Add gameplay mods:** click **Add mod**, choose the mod's ZIP, folder or DLL, then double-click it in the list to enable it (`[x]`). Add mods one at a time. To get rid of a mod, select it and click **Remove mod**: it's disabled, the game's originals come back, and the manager's copy is deleted. **Remove all mods** does that for every mod, the loader included, then deletes the loader's leftover folders and files (`BepInEx`, `MLLoader`, `dotnet`, `winhttp.dll`, `doorstop_config.ini`, `.doorstop_version`, BepInEx's `changelog.txt`) so Sprocket is back to unmodded. It asks first, and never touches a separate MelonLoader, saves or tanks.
+6. **Add gameplay mods:** click **Add mod**, choose the mod's ZIP, folder or DLL, then double-click it in the list to enable it (`[x]`). Add mods one at a time. To get rid of a mod, select it and click **Remove mod**: it's disabled, the game's originals come back, and the manager's copy goes to the Recycle Bin. **Remove all mods** does that for every mod, the loader included, then moves the loader's leftover folders and files to the Recycle Bin too (`BepInEx`, `MLLoader`, `dotnet`, `winhttp.dll`, `doorstop_config.ini`, `.doorstop_version`, BepInEx's `changelog.txt`) so Sprocket is back to unmodded. `BepInEx` also holds what mods keep, such as Quality of Life's design backups and Map Framework's maps: they can come back from the Recycle Bin. It asks first, and never touches a separate MelonLoader, saves or tanks.
 
 This installs Doorstop/BepInEx files on disk for the next game launch. It does not use PowerShell to inject code into a running process. The manager's separate **Inject DLL** feature is not used by this button.
 

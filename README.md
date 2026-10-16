@@ -5,7 +5,7 @@ Lets you use **BepInEx** and **MelonLoader** (through MLLoader) mods in **Sprock
 The official BepInEx crashes or hangs on a black screen with this Sprocket version. This is a patched version that works with it. It is only the loader: gameplay mods are downloaded separately.
 
 > [!IMPORTANT]
-> **Loader 1.2.3 supports Sprocket builds on Unity 6000.3.21f1 on 64-bit Windows, tested on 0.2.55.5, 0.2.56.0 and 0.2.56.1.** It finds its native hook targets in each game build at startup, so game updates that keep Unity's IL2CPP runtime need no new loader. Use the accompanying Mod Manager 1.3.7, which checks the game the same way and preserves backups across Steam updates.
+> **Loader 1.2.3 supports Sprocket builds on Unity 6000.3.21f1 on 64-bit Windows, tested on 0.2.55.5, 0.2.56.0 and 0.2.56.1.** It finds its native hook targets in each game build at startup, so game updates that keep Unity's IL2CPP runtime need no new loader. Use the accompanying Mod Manager 1.4.0, which checks the game the same way and preserves backups across Steam updates. It needs no Python, and updates itself, the loader and Hans21223's mods.
 
 **Contents:** [Pick an install method](#pick-an-install-method) · [Easy install](#easy-install-mod-manager) · [Manual install](#manual-install-no-python) · [Check that it worked](#check-that-it-worked) · [Troubleshooting](#troubleshooting) · [What's new](#whats-new) · [Technical details](#technical-details)
 
@@ -13,7 +13,7 @@ The official BepInEx crashes or hangs on a black screen with this Sprocket versi
 
 | | **Easy: Mod Manager** (recommended) | **Manual: copy the files yourself** |
 | --- | --- | --- |
-| You need | Python 3.9 or newer | Nothing extra |
+| You need | Nothing extra | Nothing extra |
 | What you do | Click **Install mod loader** | Download and copy three things |
 | Backups and undo | Automatic; one click to turn it off | You make and restore backups yourself |
 | Adding mods | Click **Add mod**, then switch it on | Copy each mod into the right folder |
@@ -26,36 +26,19 @@ Both methods install the same loader. Use only one of them, and don't mix a mana
 
 ### What you need
 
-1. **Python 3.9 or newer.** New to Python, or not sure you have it? Follow [Install Python](#install-python) below. It takes about five minutes.
-2. **The Mod Manager:** [download Sprocket-Mod-Manager-1.3.7.zip with the loader 1.2.3 installer](https://github.com/Hans21223/Sprocket-Mod-Loader/releases/download/v1.2.3/Sprocket-Mod-Manager-1.3.7.zip).
-3. **Only for MelonLoader mods, the MLLoader ZIP.** Download **MLLoader IL2CPP BepInEx6 V0.7.3 / 2.3.9** from [Tong317's MLLoader page on Nexus Mods](https://www.nexusmods.com/ironnest/mods/26) and leave it in your Downloads folder as a ZIP. The manager finds it there. It can't download MLLoader for you, because Nexus Mods needs you to log in. Only need BepInEx mods? Skip this.
+1. **The Mod Manager:** [download Sprocket-Mod-Manager-1.4.0.zip with the loader 1.2.3 installer](https://github.com/Hans21223/Sprocket-Mod-Loader/releases/download/v1.4.0/Sprocket-Mod-Manager-1.4.0.zip). It brings its own Python: nothing else to install.
+2. **Only for MelonLoader mods, the MLLoader ZIP.** Download **MLLoader IL2CPP BepInEx6 V0.7.3 / 2.3.9** from [Tong317's MLLoader page on Nexus Mods](https://www.nexusmods.com/ironnest/mods/26) and leave it in your Downloads folder as a ZIP. The manager finds it there. It can't download MLLoader for you, because Nexus Mods needs you to log in. Only need BepInEx mods? Skip this.
 
 Don't use GitHub's green **Code → Download ZIP** button or the "Source code" downloads. Those are for developers and can't be installed.
 
-### Install Python
+### Why there's no Python to install
 
-The Mod Manager is a Python program, so Windows needs Python to open it. To type a command below, open **Command Prompt**: press the Windows key, type `cmd`, press Enter.
-
-**1. Check whether you already have it.** In Command Prompt, type `py --version` and press Enter. If it says **Python 3.9** or newer (for example `Python 3.14.0`), you're done: go to [Install the loader](#install-the-loader). If it says something else, carry on.
-
-**2. Install the Python Install Manager.** On [python.org/downloads](https://www.python.org/downloads/), click **Download Python install manager**, open the downloaded file and click **Install**. (It's the same as **Python Install Manager** in the Microsoft Store.) This installs the tool that installs Python, not Python itself yet.
-
-**3. Let it set itself up.** In Command Prompt, type `py` and press Enter. The first time, a setup helper asks a few questions. Type **y** and press Enter for each one.
-
-If it says *"Your app execution alias settings are configured to launch other commands"*, type **y** and Windows Settings opens on **App execution aliases**. There:
-- Turn **on** everything named **Python (default)**, **Python (default windowed)** and **Python install manager**. If they're already on, turn them off and on again.
-- Turn **off** the **App Installer** entries for `python.exe` and `python3.exe`. Those open the Microsoft Store instead of Python.
-
-Then go back to Command Prompt and answer the rest with **y**, including installing the latest Python.
-
-**4. Check it worked.** Close Command Prompt, open a new one, and type `py --version`. It should now say `Python 3.something`. If it says no Python is installed, type `py install default`, wait for it to finish, and check again.
-
-**Prefer the classic installer?** On [python.org/downloads/windows](https://www.python.org/downloads/windows/), under the newest **Python 3** release, click **Download Windows installer (64-bit)**. Run it and click **Install Now**. Its default options include everything the Mod Manager needs, and `.pyw` files open with a double-click right away. Don't install both the classic installer's **Python launcher** and the Install Manager: they fight over the `py` command.
+The Mod Manager is a Python program, and it brings its own Python. `Mod Manager.exe` is Python's own `pythonw.exe` from python.org, renamed, still signed by the Python Software Foundation, so Windows and antivirus programs know it. Started on its own, it opens the manager beside it. Already have Python 3.9 or newer? Double-clicking `modman.pyw` works too.
 
 ### Install the loader
 
-1. **Put the `ModManager` folder somewhere it can stay.** Double-click `Sprocket-Mod-Manager-1.3.6.zip` to open it, then drag the `ModManager` folder out. The Sprocket game folder is a good place (in Steam, right-click **Sprocket** → **Manage** → **Browse local files**). Don't delete this folder later: it keeps the backups used to undo changes.
-2. **Close Sprocket** if it's running, then **double-click `modman.pyw`** in the `ModManager` folder. The manager finds Sprocket in your Steam library by itself and selects it in the box at the top.
+1. **Put the `ModManager` folder somewhere it can stay.** Double-click `Sprocket-Mod-Manager-1.4.0.zip` to open it, then drag the `ModManager` folder out. The Sprocket game folder is a good place (in Steam, right-click **Sprocket** → **Manage** → **Browse local files**). Don't delete this folder later: it keeps the backups used to undo changes.
+2. **Close Sprocket** if it's running, then **double-click `Mod Manager.exe`** in the `ModManager` folder. The manager finds Sprocket in your Steam library by itself and selects it in the box at the top.
 3. **Click Install mod loader.** That's the only click it needs. The manager downloads the official BepInEx and this patch, checks that they're the exact expected files, backs up anything it replaces, and installs. MLLoader is included if its ZIP is in your Downloads folder or on your Desktop.
 
    If it can't find MLLoader, it asks first. Choose **Yes** to pick the ZIP yourself, or **No** to install without it for now. BepInEx mods work without it. To add MLLoader later, click **Install mod loader** again.
@@ -80,9 +63,9 @@ Add mods one at a time. If the game breaks, you'll know which mod caused it.
 ### Turn mods or the loader off
 
 - **One mod:** select it and click **Enable / Disable**.
-- **Delete a mod for good:** select it and click **Remove mod**. It's turned off first, so your original files come back, then the Mod Manager's copy is deleted.
+- **Delete a mod:** select it and click **Remove mod**. It's turned off first, so your original files come back, then the Mod Manager's copy goes to the Recycle Bin.
 - **Back to the unmodded game, keeping your mods:** disable `Sprocket mod loader - BepInEx + MLLoader`. Your original files are put back.
-- **Remove everything:** click **Remove all mods**. It removes every mod and the mod loader, deletes what the loader left in the game folder (`BepInEx`, `MLLoader`, `dotnet`, `winhttp.dll` and so on, with mod settings and logs), and puts your original files back. Saves and tanks aren't touched. It lists what it will delete and asks first.
+- **Remove everything:** click **Remove all mods**. It removes every mod and the mod loader, moves what the loader left in the game folder to the Recycle Bin (`BepInEx`, `MLLoader`, `dotnet`, `winhttp.dll` and so on, with mod settings, logs, Quality of Life's design backups and Map Framework's maps), and puts your original files back. Saves and tanks aren't touched. It lists what it will remove and asks first.
 - Don't delete the `backup` or `state` folders inside `ModManager`. The manager needs them to put your original files back.
 
 More on the manager, including upgrading from an older version: [manager/README.md](manager/README.md).
@@ -144,9 +127,7 @@ The loader ZIP also contains **Prepare Loader.cmd**, an optional helper that dow
 | *Checksum failed: …* | The file isn't the exact version needed. For MLLoader, download **V0.7.3 / 2.3.9** again from Nexus. |
 | *… need MLLoader …* | You have MelonLoader mods, so the manager won't install without MLLoader. Put the MLLoader ZIP in your Downloads folder and click **Install mod loader** again. |
 | *module 'hashlib' has no attribute 'file_digest'* | You have Mod Manager 1.3.0. [Download 1.3.7](https://github.com/Hans21223/Sprocket-Mod-Loader/releases/download/v1.2.3/Sprocket-Mod-Manager-1.3.7.zip). |
-| Double-clicking `modman.pyw` does nothing, or opens it as text | Python isn't installed, or Windows doesn't know to open `.pyw` files with it. Follow [Install Python](#install-python), then right-click `modman.pyw` → **Open with** → **Choose another app** → **Python**, tick **Always**. From 1.3.3, anything else that stops the manager opening shows a message saying what to do. |
-| Double-clicking `modman.pyw`, or typing `python`, opens the Microsoft Store | Windows' **App Installer** shortcut is in the way. Press the Windows key, type **manage app execution aliases**, press Enter. Turn **off** **App Installer** `python.exe` and `python3.exe`, turn **on** **Python (default)** and **Python (default windowed)**. See [Install Python](#install-python) step 3. |
-| A black window says *"Your app execution alias settings are configured to launch other commands besides 'py' and 'python'"* | That's the Python Install Manager's setup helper. Type **y**, press Enter, and follow [Install Python](#install-python) step 3. |
+| Double-clicking `modman.pyw` does nothing, opens it as text, or opens the Microsoft Store | Double-click `Mod Manager.exe` instead: it brings its own Python. From 1.3.3, anything else that stops the manager opening shows a message saying what to do. |
 | `py` or `python` says *not recognized* / *command not found* | Did the Python Install Manager install? Then press the Windows key, type **manage app execution aliases**, press Enter, and turn **Python (default)** and **Python install manager** off and on again. Open a new Command Prompt and try again. |
 | `py --version` says no Python is installed | The Install Manager is there, but not Python itself yet. Type `py install default` and wait. |
 | `py` says *can't open file* | An old **Python launcher** from the classic installer takes priority over the Install Manager. Press the Windows key, type **installed apps**, press Enter (on Windows 10: **Apps & features**). In the page's search box type **python launcher**; if it's there, click **…** next to it → **Uninstall**. Then open a new Command Prompt. |
@@ -162,6 +143,13 @@ The loader ZIP also contains **Prepare Loader.cmd**, an optional helper that dow
 
 ## What's new
 
+- **1.4.0 (Mod Manager):** no Python to install: `Mod Manager.exe` is Python's own signed `pythonw.exe`, renamed, with
+  Python bundled beside it. When it opens, it offers updates for Quality of Life, Battle Editor, Map Framework, Language
+  Framework, itself and the loader: only versions whose `sp-compat` line fits your Sprocket, installed with one click and
+  checked against each release's SHA-256. Files you added in a mod's folder stay. Remove mod and Remove all mods use
+  the Recycle Bin, so design backups and maps kept in `BepInEx` can come back. The state file is written whole or not
+  at all, and setup keeps only its newest 3 snapshots. Upgrading from 1.3.x: copy the new `ModManager` folder over the
+  old one, once.
 - **1.2.3 (loader, current) and 1.3.7 (Mod Manager):** game updates no longer need a new loader when they keep Unity's IL2CPP runtime unchanged. The loader finds its three native hook targets in each build at startup, through the call paths and checks that were done by hand for each version, instead of accepting only exact file fingerprints. An update that changes that runtime is still refused. Already installed? Nothing to redo after such updates. Tested on 0.2.56.1 up to the main menu with four plugins; the trace matches the hand-verified targets of 0.2.55.5 and 0.2.56.0.
 - **1.3.6 (Mod Manager):** works alongside the [Sprocket Mod API](https://github.com/furryaxw/SprocketModAPI). Mods that use it as an
   optional (soft) dependency are no longer reported as missing it, and mods turned off in the API's Mods menu (renamed to

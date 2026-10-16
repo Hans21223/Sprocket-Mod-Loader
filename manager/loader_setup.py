@@ -34,6 +34,14 @@ def remove_tree(path, parent):
     shutil.rmtree(path)
 
 
+def prune_history(archive, keep=3):
+    """Only the newest setup snapshots stay: each holds every file setup touched (about 140 MB), and every loader
+    update or repair adds one."""
+    snapshots = sorted(Path(archive).glob('before-setup-*'), key=lambda p: p.stat().st_mtime, reverse=True)
+    for old in snapshots[keep:]:
+        remove_tree(old, Path(archive))
+
+
 def digest(path):
     # Read in chunks rather than hashlib.file_digest, which only exists from Python 3.11.
     sha = hashlib.sha256()
@@ -333,6 +341,10 @@ def install_prepared(game, home, prepared, report=lambda message: None):
         destination = Path(tempfile.mkdtemp(prefix='before-setup-', dir=archive))
         destination.rmdir()
         os.replace(pending, destination)
+        try:
+            prune_history(archive)
+        except (OSError, RuntimeError):
+            pass  # only tidying: the install itself succeeded
     except BaseException as failure:
         try:
             for path, snapshot, existed in reversed(snapshots):

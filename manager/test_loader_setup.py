@@ -1,8 +1,10 @@
 import hashlib
 import io
 import json
+import os
 from pathlib import Path
 import runpy
+import shutil
 import tempfile
 import unittest
 from unittest.mock import patch
@@ -25,6 +27,14 @@ class SetupTests(unittest.TestCase):
         (self.prepared / 'BepInEx/core').mkdir(parents=True)
         (self.prepared / 'BepInEx/core/bridge.dll').write_bytes(b'patched')
         (self.prepared / 'winhttp.dll').write_bytes(b'loader')
+        self.recycled = []
+
+        def recycle(path):  # the real one would fill this PC's Recycle Bin
+            self.recycled.append(Path(path))
+            shutil.rmtree(path) if Path(path).is_dir() else Path(path).unlink()
+        patcher = patch.dict(Game.remove.__globals__, {'recycle': recycle})
+        patcher.start()
+        self.addCleanup(patcher.stop)
 
     def install(self):
         return setup.install_prepared(self.game, self.home, self.prepared)
@@ -91,6 +101,7 @@ class SetupTests(unittest.TestCase):
         self.game.remove(mod.name)
         self.assertEqual((self.root / 'part.json').read_bytes(), b'original')
         self.assertFalse(mod.exists())
+        self.assertEqual(self.recycled, [mod])  # to the Recycle Bin: what the player kept in it can come back
         self.assertNotIn('gameplay', self.game.enabled)
         self.assertNotIn('gameplay', self.game.mods())
         with self.assertRaisesRegex(RuntimeError, 'Refusing'):
@@ -113,6 +124,16 @@ class SetupTests(unittest.TestCase):
         self.assertEqual((kept, game.enabled, game.mods()), ([], {}, []))
         self.assertEqual(sorted(p.name for p in self.root.iterdir()), ['GameAssembly.dll'])
         self.assertIn(self.root / 'changelog.txt', gone)
+        self.assertIn(self.root / 'BepInEx', self.recycled)  # with QoL's backups and the player's maps in it
+
+    def test_history_keeps_the_newest_three(self):
+        archive = self.home / 'loader-history'
+        for age in range(5):
+            (archive / f'before-setup-{age}').mkdir(parents=True)
+            os.utime(archive / f'before-setup-{age}', (1000 + age, 1000 + age))
+        (archive / 'notes').mkdir()
+        setup.prune_history(archive)
+        self.assertEqual(sorted(p.name for p in archive.iterdir()), ['before-setup-2', 'before-setup-3', 'before-setup-4', 'notes'])
 
     def test_mixed_mod_conflict_is_not_disabled(self):
         mod = self.game.mods_dir / 'mixed'
