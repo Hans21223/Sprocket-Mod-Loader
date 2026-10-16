@@ -1,0 +1,9 @@
+Mod Manager 1.4.0: no Python to install, and one-click updates. The loader is unchanged at 1.2.3.
+
+- **No Python to install:** `Mod Manager.exe` is Python's own `pythonw.exe` from python.org, renamed, still signed by the Python Software Foundation, with Python 3.14 and Tk bundled beside it. Double-click it. There's no other program in the folder. If you have Python 3.9 or newer yourself, `modman.pyw` still works too.
+- **Updates:** when it opens, the manager checks GitHub for new releases of Quality of Life, Battle Editor, Map Framework, Language Framework, itself and the loader. It offers only versions whose `sp-compat` line fits your Sprocket version. One click installs them the usual way (disable, replace, enable), each download checked against the release's SHA-256. Files you added inside a mod's folder, such as Map Framework's `CustomMaps`, stay. After updating itself it opens again, and runs **Install mod loader** when the new version pins a newer loader.
+- **Remove mod** and **Remove all mods** use the Recycle Bin. `BepInEx` also holds what mods keep, such as Quality of Life's design backups and Map Framework's maps, and those can now come back.
+- The record of which game files the manager changed is written whole or not at all, so a full disk or a crash mid-write can't cut it short. Setup keeps only its newest 3 snapshots (each about 140 MB) instead of every one.
+- **Sprocket-Mod-Manager-1.4.0.zip:** upgrading from 1.3.x, copy the new `ModManager` folder over the old one, once, keeping `games.json`, mods, state and backups. From 1.4.0 on, the manager updates itself. **Sprocket-Mod-Loader-1.2.3.zip** is attached unchanged for manual installs.
+
+All 80 manager tests and the self-test pass, on Python 3.14 and inside the bundled Python. The update check was run against the real releases. The window itself is not yet tried.

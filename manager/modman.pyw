@@ -35,8 +35,27 @@ def load(path, default):
 
 
 def save(path, data):
+    # Whole or not at all: state/<game>.json is the only record of which game files to put back.
     path.parent.mkdir(parents=True, exist_ok=True)
-    path.write_text(json.dumps(data, indent=2), encoding="utf-8")
+    temporary = path.with_name(path.name + ".tmp")
+    temporary.write_text(json.dumps(data, indent=2), encoding="utf-8")
+    os.replace(temporary, path)
+
+
+class FileOperation(ctypes.Structure):
+    """shellapi.h's SHFILEOPSTRUCTW, packed on 32-bit Windows."""
+    if ctypes.sizeof(ctypes.c_void_p) == 4:
+        _pack_ = 1
+    _fields_ = [("hwnd", wt.HWND), ("wFunc", wt.UINT), ("pFrom", wt.LPCWSTR), ("pTo", wt.LPCWSTR), ("fFlags", wt.WORD),
+                ("fAnyOperationsAborted", wt.BOOL), ("hNameMappings", ctypes.c_void_p), ("lpszProgressTitle", wt.LPCWSTR)]
+
+
+def recycle(path):
+    """Into the Recycle Bin, so a player can get it back. Windows asks first if something is too big for the bin."""
+    # FO_DELETE; FOF_ALLOWUNDO | FOF_NOCONFIRMATION | FOF_SILENT | FOF_WANTNUKEWARNING. pFrom ends in two nulls.
+    operation = FileOperation(None, 3, str(Path(path).resolve()) + "\0", None, 0x0040 | 0x0010 | 0x0004 | 0x4000)
+    if ctypes.windll.shell32.SHFileOperationW(ctypes.byref(operation)) or operation.fAnyOperationsAborted:
+        raise RuntimeError(f"{path} couldn't go to the Recycle Bin, so it was kept")
 
 
 def stamp(path):
@@ -251,10 +270,8 @@ class Game:
         kept = self.disable(mod) if mod in self.enabled else []
         if mod in self.enabled:
             raise RuntimeError(f"{mod} couldn't be fully disabled, so it wasn't removed")
-        if folder.is_dir():
-            shutil.rmtree(folder)
-        elif folder.exists():
-            folder.unlink()
+        if folder.exists():
+            recycle(folder)  # players keep things in a mod's folder too (Map Framework's CustomMaps)
         return kept
 
     # What BepInEx, MLLoader and Doorstop leave in a Sprocket folder once every mod is disabled: generated interop and
@@ -280,10 +297,8 @@ class Game:
         for path in gone:
             if path.resolve().parent != self.root.resolve():
                 raise RuntimeError(f"Refusing to delete {path}")
-            if path.is_dir() and not path.is_symlink():
-                shutil.rmtree(path)
-            else:
-                path.unlink()
+            # BepInEx also holds what players keep: QoL's design backups, Map Framework's maps and conversions.
+            path.unlink() if path.is_symlink() else recycle(path)
         return kept, gone
 
     def inject_dlls(self):
@@ -1123,7 +1138,7 @@ def gui():
     def remove_mod():
         g, m = game(), selected()
         if not messagebox.askyesno("Remove mod", f"Remove {m}?\n\nIts files leave the game, your original files come "
-                                   "back, and the Mod Manager's copy is deleted. To use it again, add it again."):
+                                   "back, and the Mod Manager's copy goes to the Recycle Bin. To use it again, add it again."):
             return
         kept = g.remove(m)
         status["text"] = f"Removed {m}"
@@ -1142,9 +1157,11 @@ def gui():
         listed = "\n".join(f"  {m}" for m in mods[:12]) + (f"\n  and {len(mods) - 12} more" if len(mods) > 12 else "")
         if not messagebox.askyesno("Remove all mods", "Remove EVERY mod, including the mod loader?\n\n" +
                 (f"Mods ({len(mods)}):\n{listed}\n\n" if mods else "") +
-                (f"Also deleted from the game folder: {', '.join(p.name for p in gone)} (loader files, with mod "
-                 "settings, logs and caches).\n\n" if gone else "") +
-                "Your original game files come back. Saves and tanks aren't touched. This can't be undone."):
+                (f"Also from the game folder: {', '.join(p.name for p in gone)}: loader files with mod settings, "
+                 "logs and caches, and what mods keep there, such as QoL's design backups and Map Framework's maps.\n\n"
+                 if gone else "") +
+                "Your original game files come back. Saves and tanks aren't touched. Everything removed goes to the "
+                "Recycle Bin, so you can get it back."):
             return
         kept, gone = g.remove_all(loader_setup.MOD)
         status["text"] = f"Removed {len(mods)} mod(s) and {len(gone)} loader leftover(s). Sprocket is unmodded."
@@ -1245,9 +1262,45 @@ def gui():
         inject(pid, dll)
         status["text"] = f"Injected {Path(dll).name} into pid {pid}"
 
-    def setup_loader():
+    def busy(title, work, done):
+        """work(report) on a worker thread with the window's controls off; then done(its result), or its error shown."""
         import queue, threading
         nonlocal installing
+        installing, messages = True, queue.Queue()
+        controls = [pick, box, *top.winfo_children()[1:], *bottom.winfo_children()]
+        for control in controls:
+            control.configure(state='disabled')
+
+        def worker():
+            try:
+                messages.put(('done', work(lambda text: messages.put(('progress', text)))))
+            except Exception as error:
+                messages.put(('error', str(error)))
+
+        def poll():
+            nonlocal installing
+            while not messages.empty():
+                kind, value = messages.get_nowait()
+                if kind == 'progress':
+                    status['text'] = value
+                    continue
+                installing = False
+                for control in controls:
+                    control.configure(state='normal')
+                pick.configure(state='readonly')
+                refresh()
+                if kind == 'error':
+                    status['text'] = value
+                    messagebox.showerror(title, value)
+                else:
+                    done(value)
+                return
+            win.after(100, poll)
+
+        threading.Thread(target=worker, daemon=True).start()
+        win.after(100, poll)
+
+    def setup_loader():
         if installing:
             return
         g = game()
@@ -1272,44 +1325,70 @@ def gui():
                     status['text'] = f'Setup cancelled. Get MLLoader IL2CPP 2.3.9 from {loader_setup.MELON_PAGE}'
                     return
                 melon = Path(chosen)
-        installing = True
-        messages = queue.Queue()
-        controls = [pick, box, *top.winfo_children()[1:], *bottom.winfo_children()]
-        for control in controls:
-            control.configure(state='disabled')
         status['text'] = f'Preparing loader for {g.name}...'
+
+        def done(text):
+            status['text'] = text
+            import mod_compat
+            if mod_compat.separate_melonloader(g.root):
+                messagebox.showwarning('Loader setup', text + "\n\nThere's also a separate MelonLoader in "
+                    "the game folder. Uninstall it with the MelonLoader installer so only one loader runs, "
+                    "then add its mods here with Add mod.")
+
+        busy('Loader setup', lambda report: loader_setup.install(g, HOME, melon, pids, report), done)
+
+    def check_updates():
+        """Newer releases of this author's mods, this manager and its loader that fit the game: offered once a start."""
+        import queue, threading, updates
+        g, results = game(), queue.Queue()
 
         def worker():
             try:
-                result = loader_setup.install(g, HOME, melon, pids, lambda text: messages.put(('progress', text)))
-                messages.put(('done', result))
-            except Exception as error:
-                messages.put(('error', str(error)))
+                results.put(updates.check(g.root, g.mods_dir, g.enabled))
+            except Exception as error:  # offline, or GitHub busy: just say so
+                results.put(error)
 
         def poll():
-            nonlocal installing
-            while not messages.empty():
-                kind, text = messages.get_nowait()
-                status['text'] = text
-                if kind != 'progress':
-                    installing = False
-                    for control in controls:
-                        control.configure(state='normal')
-                    pick.configure(state='readonly')
-                    refresh()
-                    if kind == 'error':
-                        messagebox.showerror('Loader setup', text)
-                    else:
-                        import mod_compat
-                        if mod_compat.separate_melonloader(g.root):
-                            messagebox.showwarning('Loader setup', text + "\n\nThere's also a separate MelonLoader in "
-                                "the game folder. Uninstall it with the MelonLoader installer so only one loader runs, "
-                                "then add its mods here with Add mod.")
-                    return
-            win.after(100, poll)
+            if results.empty():
+                return win.after(250, poll)
+            found = results.get()
+            if isinstance(found, Exception):
+                status['text'] = f"Couldn't check for updates: {found}"
+            elif found and not installing and messagebox.askyesno('Updates', 'Updates are available:\n\n' +
+                    '\n'.join(f'  {what}: {old} -> {new}' for what, old, new, *_ in found) +
+                    f'\n\nInstall them now? Close {Path(g.exe).name} first.'):
+                act(lambda: install_updates(g, found))()
 
         threading.Thread(target=worker, daemon=True).start()
-        win.after(100, poll)
+        win.after(250, poll)
+
+    def install_updates(g, found):
+        import updates
+        if pids(Path(g.exe).name):
+            raise RuntimeError(f'Close {Path(g.exe).name} first, then open the Mod Manager again to update.')
+
+        def work(report):
+            manager = False
+            for update in found:
+                manager = updates.apply(g, HOME, update, report) or manager
+            return manager
+
+        def done(manager):
+            if manager:  # the new manager starts, and brings the loader up to date if it pins a newer one
+                subprocess.Popen([sys.executable, str(HOME / 'modman.pyw'), '--after-update', loader_setup.PATCH_NAME])
+                win.destroy()
+            else:
+                status['text'] = 'Updated ' + ', '.join(f'{what} to {new}' for what, _, new, *_ in found)
+
+        busy('Updates', work, done)
+
+    def after_start():
+        # Just updated itself: a newer pinned loader is installed the usual way (setup verifies what's there).
+        flag = sys.argv[sys.argv.index('--after-update') + 1:][:1] if '--after-update' in sys.argv else None
+        if flag is None:
+            check_updates()
+        elif flag != [loader_setup.PATCH_NAME] and loader_setup.MOD in game().enabled:
+            setup_loader()
 
     def close():
         if installing:
@@ -1320,7 +1399,8 @@ def gui():
     win = tk.Tk()
     # An error in a button no guarded() wraps would otherwise only reach the (invisible) console.
     win.report_callback_exception = lambda *error: stopped("".join(traceback.format_exception(*error)))
-    win.title("Mod Manager")
+    import updates
+    win.title(f"Mod Manager {updates.VERSION}")
     win.protocol('WM_DELETE_WINDOW', close)
     dark(win)
     top = ttk.Frame(win)
@@ -1346,6 +1426,7 @@ def gui():
     refresh()
     if games:
         win.after(200, act(lambda: check_files()))  # after the window shows
+        win.after(400, act(after_start))
     win.mainloop()
 
 

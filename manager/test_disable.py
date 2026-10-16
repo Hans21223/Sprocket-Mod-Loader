@@ -149,6 +149,17 @@ class DisableTests(unittest.TestCase):
         self.assertFalse((self.root / self.rel).exists())
         self.assertEqual(self.saved_state(), {})
 
+    def test_a_state_write_cut_short_keeps_the_previous_record(self):
+        state = self.home / 'state' / 'record.json'
+        module['save'](state, {'mod': {'BepInEx/plugins/a.dll': [1, 2]}})
+
+        def disk_full(path, text, **_):  # half the text lands, then the disk is full
+            Path.write_bytes(path, text.encode()[:len(text) // 2])
+            raise OSError('No space left on device')
+        with patch.object(Path, 'write_text', disk_full), self.assertRaises(OSError):
+            module['save'](state, {'mod': {}, 'other': {}})
+        self.assertEqual(json.loads(state.read_text(encoding='utf-8')), {'mod': {'BepInEx/plugins/a.dll': [1, 2]}})
+
 
 if __name__ == '__main__':
     unittest.main()
